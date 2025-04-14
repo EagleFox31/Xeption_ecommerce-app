@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { useLocation } from "@/context/LocationContext";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import {
@@ -214,6 +215,8 @@ const mockProducts = [
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const [quantity, setQuantity] = useState(1);
+  const { userLocation, getDeliveryZone } = useLocation();
+  const deliveryZone = getDeliveryZone();
 
   // Find the product by ID
   const product =
@@ -423,7 +426,17 @@ const ProductDetail = () => {
               <div className="space-y-3 border-t border-zinc-800 pt-6">
                 <div className="flex items-center">
                   <Truck className="h-5 w-5 text-amber-400 mr-3" />
-                  <span className="text-sm">Livraison gratuite à Yaoundé</span>
+                  <span className="text-sm">
+                    {deliveryZone?.deliveryCost === 0
+                      ? `Livraison gratuite à ${userLocation}`
+                      : `Livraison à ${userLocation}: ${deliveryZone?.deliveryCost.toLocaleString()} FCFA`}
+                  </span>
+                </div>
+                <div className="flex items-center">
+                  <Clock className="h-5 w-5 text-amber-400 mr-3" />
+                  <span className="text-sm">
+                    Délai de livraison estimé: {deliveryZone?.estimatedTime}
+                  </span>
                 </div>
                 <div className="flex items-center">
                   <Shield className="h-5 w-5 text-amber-400 mr-3" />
