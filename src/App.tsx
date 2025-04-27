@@ -17,6 +17,7 @@ const TradeInPage = lazy(() => import("./pages/TradeInPage"));
 const BusinessProcurementPage = lazy(
   () => import("./pages/BusinessProcurementPage"),
 );
+const ConsultationPage = lazy(() => import("./pages/ConsultationPage"));
 
 // Auth pages
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
@@ -46,6 +47,7 @@ function App() {
             {/* Service Routes */}
             <Route path="/trade-in" element={<TradeInPage />} />
             <Route path="/business" element={<BusinessProcurementPage />} />
+            <Route path="/consultation" element={<ConsultationPage />} />
 
             {/* Auth Routes */}
             <Route path="/auth/login" element={<LoginPage />} />

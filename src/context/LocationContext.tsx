@@ -11,7 +11,7 @@ interface LocationContextType {
   calculateDeliveryCost: (subtotal: number, location?: string) => number;
 }
 
-const LocationContext = createContext<LocationContextType | undefined>(
+export const LocationContext = createContext<LocationContextType | undefined>(
   undefined,
 );
 

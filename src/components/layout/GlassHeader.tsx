@@ -98,8 +98,8 @@ const GlassHeader = () => {
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="text-white hover:text-gold-500 hover:bg-gray-900/70">
-                  Produits
+                <NavigationMenuTrigger className="text-gold-500 hover:text-white hover:bg-gray-900/70">
+                  Services
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
                   <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-gray-900/90 backdrop-blur-md border border-gray-800/50">
@@ -211,6 +211,18 @@ const GlassHeader = () => {
                   >
                     <Building2 className="mr-2 h-4 w-4" />
                     Entreprise
+                  </Button>
+                </Link>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <Link to="/consultation">
+                  <Button
+                    variant="ghost"
+                    className="text-white hover:text-gold-500 hover:bg-gray-900/70"
+                  >
+                    <Headphones className="mr-2 h-4 w-4" />
+                    Consultation
                   </Button>
                 </Link>
               </NavigationMenuItem>
@@ -344,7 +356,7 @@ const GlassHeader = () => {
                 to="/products"
                 className="flex items-center p-3 rounded-md hover:bg-gray-800/70"
               >
-                <span className="text-white">Produits</span>
+                <span className="text-white">Services</span>
               </Link>
               <Link
                 to="/trade-in"
@@ -366,6 +378,13 @@ const GlassHeader = () => {
               >
                 <Building2 className="mr-2 h-4 w-4 text-gold-500" />
                 <span className="text-white">Entreprise</span>
+              </Link>
+              <Link
+                to="/consultation"
+                className="flex items-center p-3 rounded-md hover:bg-gray-800/70"
+              >
+                <Headphones className="mr-2 h-4 w-4 text-gold-500" />
+                <span className="text-white">Consultation</span>
               </Link>
 
               {user ? (

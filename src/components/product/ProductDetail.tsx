@@ -13,8 +13,23 @@ import {
   RefreshCw,
   Plus,
   Minus,
+  Clock,
+  CheckCircle,
+  X,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "../ui/dialog";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Textarea } from "../ui/textarea";
 
 // Mock data for products (same as in ProductListing)
 const mockProducts = [
@@ -41,6 +56,7 @@ const mockProducts = [
     ],
     stock: 15,
     relatedProducts: ["prod-5", "prod-2"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-2",
@@ -65,6 +81,7 @@ const mockProducts = [
     ],
     stock: 8,
     relatedProducts: ["prod-6", "prod-7"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-3",
@@ -89,6 +106,7 @@ const mockProducts = [
     ],
     stock: 20,
     relatedProducts: ["prod-7", "prod-8"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-4",
@@ -113,6 +131,7 @@ const mockProducts = [
     ],
     stock: 5,
     relatedProducts: ["prod-8", "prod-5"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-5",
@@ -137,6 +156,7 @@ const mockProducts = [
     ],
     stock: 7,
     relatedProducts: ["prod-1", "prod-4"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-6",
@@ -161,6 +181,7 @@ const mockProducts = [
     ],
     stock: 12,
     relatedProducts: ["prod-2", "prod-7"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-7",
@@ -185,6 +206,7 @@ const mockProducts = [
     ],
     stock: 25,
     relatedProducts: ["prod-3", "prod-2"],
+    outOfStockOrders: [],
   },
   {
     id: "prod-8",
@@ -209,14 +231,56 @@ const mockProducts = [
     ],
     stock: 50,
     relatedProducts: ["prod-4", "prod-3"],
+    outOfStockOrders: [],
   },
 ];
+
+// Define the type for out of stock orders
+interface OutOfStockOrder {
+  id: string;
+  productId: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerAddress: string;
+  notes: string;
+  orderDate: Date;
+  status: "pending" | "contacted" | "fulfilled" | "cancelled";
+}
+
+// Define the type for products
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice: number;
+  image: string;
+  rating: number;
+  category: string;
+  isNew: boolean;
+  isFeatured: boolean;
+  description: string;
+  specs: string[];
+  stock: number;
+  relatedProducts: string[];
+  outOfStockOrders: OutOfStockOrder[];
+}
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const [quantity, setQuantity] = useState(1);
   const { userLocation, getDeliveryZone } = useLocation();
   const deliveryZone = getDeliveryZone();
+  const [showOutOfStockModal, setShowOutOfStockModal] = useState(false);
+  const [outOfStockFormData, setOutOfStockFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    notes: "",
+  });
+  const [orderPlaced, setOrderPlaced] = useState(false);
+  const [orderReference, setOrderReference] = useState("");
 
   // Find the product by ID
   const product =
@@ -254,6 +318,73 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     console.log(`Added ${quantity} of ${product.name} to cart`);
     // Here you would add the product to the cart
+  };
+
+  // Handle out of stock order form input changes
+  const handleOutOfStockInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setOutOfStockFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Generate a unique order reference
+  const generateOrderReference = () => {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    return `OSO-${timestamp}-${random}`;
+  };
+
+  // Handle out of stock order submission
+  const handleOutOfStockOrder = () => {
+    // Create a new order reference
+    const reference = generateOrderReference();
+    setOrderReference(reference);
+
+    // Create the order object
+    const newOrder: OutOfStockOrder = {
+      id: reference,
+      productId: product.id,
+      customerName: outOfStockFormData.name,
+      customerEmail: outOfStockFormData.email,
+      customerPhone: outOfStockFormData.phone,
+      customerAddress: outOfStockFormData.address,
+      notes: outOfStockFormData.notes,
+      orderDate: new Date(),
+      status: "pending",
+    };
+
+    // Find the product in the mockProducts array and add the order to its outOfStockOrders array
+    const productIndex = mockProducts.findIndex((p) => p.id === product.id);
+    if (productIndex !== -1) {
+      mockProducts[productIndex].outOfStockOrders.push(newOrder);
+    }
+
+    // Log the order for debugging
+    console.log(`Out of stock order for ${product.name}:`, newOrder);
+    console.log("Updated product:", mockProducts[productIndex]);
+
+    // Set order as placed
+    setOrderPlaced(true);
+
+    // Reset form and close modal after showing confirmation
+    setTimeout(() => {
+      setOutOfStockFormData({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        notes: "",
+      });
+      setShowOutOfStockModal(false);
+      // Keep orderPlaced true to show the banner
+      // It will stay visible until user navigates away
+    }, 5000);
   };
 
   return (
@@ -403,15 +534,25 @@ const ProductDetail = () => {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                <Button
-                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-black"
-                  size="lg"
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
-                >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Ajouter au panier
-                </Button>
+                {product.stock > 0 ? (
+                  <Button
+                    className="flex-1 bg-amber-500 hover:bg-amber-600 text-black"
+                    size="lg"
+                    onClick={handleAddToCart}
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Ajouter au panier
+                  </Button>
+                ) : (
+                  <Button
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    size="lg"
+                    onClick={() => setShowOutOfStockModal(true)}
+                  >
+                    <Clock className="mr-2 h-5 w-5" />
+                    Commander (Hors Stock)
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="lg"
@@ -421,6 +562,26 @@ const ProductDetail = () => {
                   Ajouter aux favoris
                 </Button>
               </div>
+
+              {/* Order Confirmation Banner - shows when an order has been placed but modal is closed */}
+              {orderPlaced && !showOutOfStockModal && (
+                <div className="bg-green-600/20 border border-green-600 rounded-md p-4 mb-6 flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-green-500">
+                      Commande Enregistrée!
+                    </p>
+                    <p className="text-sm text-gray-300">
+                      Votre commande{" "}
+                      <span className="font-medium text-amber-400">
+                        {orderReference}
+                      </span>{" "}
+                      a été enregistrée. Nous vous contacterons dès que le
+                      produit sera disponible.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Shipping & Returns */}
               <div className="space-y-3 border-t border-zinc-800 pt-6">
@@ -548,6 +709,140 @@ const ProductDetail = () => {
           </div>
         )}
       </div>
+
+      {/* Out of Stock Order Modal */}
+      <Dialog open={showOutOfStockModal} onOpenChange={setShowOutOfStockModal}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-white max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold">
+              {orderPlaced ? (
+                <div className="flex items-center text-green-500">
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Commande Enregistrée
+                </div>
+              ) : (
+                "Commander un Produit Hors Stock"
+              )}
+            </DialogTitle>
+            <DialogDescription className="text-gray-400">
+              {orderPlaced
+                ? "Votre commande a été enregistrée avec succès. Nous vous contacterons dès que le produit sera disponible."
+                : `Remplissez ce formulaire pour commander ${product.name} même s'il est actuellement hors stock.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!orderPlaced ? (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Nom complet</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    placeholder="Votre nom"
+                    value={outOfStockFormData.name}
+                    onChange={handleOutOfStockInputChange}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    placeholder="+237 6XX XXX XXX"
+                    value={outOfStockFormData.phone}
+                    onChange={handleOutOfStockInputChange}
+                    className="bg-zinc-800 border-zinc-700"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="votre@email.com"
+                  value={outOfStockFormData.email}
+                  onChange={handleOutOfStockInputChange}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Adresse de livraison</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  placeholder="Votre adresse complète"
+                  value={outOfStockFormData.address}
+                  onChange={handleOutOfStockInputChange}
+                  className="bg-zinc-800 border-zinc-700"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Notes supplémentaires</Label>
+                <Textarea
+                  id="notes"
+                  name="notes"
+                  placeholder="Informations supplémentaires sur votre commande"
+                  value={outOfStockFormData.notes}
+                  onChange={handleOutOfStockInputChange}
+                  className="bg-zinc-800 border-zinc-700 min-h-[80px]"
+                />
+              </div>
+
+              <div className="bg-zinc-800 p-3 rounded-md">
+                <p className="text-sm text-amber-400 font-medium">
+                  Détails du produit:
+                </p>
+                <p className="text-sm">{product.name}</p>
+                <p className="text-sm text-gray-400">
+                  Prix: {formatPrice(product.price)}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            {orderPlaced ? (
+              <Button
+                onClick={() => setShowOutOfStockModal(false)}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                Fermer
+              </Button>
+            ) : (
+              <>
+                <DialogClose asChild>
+                  <Button
+                    variant="outline"
+                    className="border-zinc-700 text-white hover:bg-zinc-800"
+                  >
+                    <X className="mr-2 h-4 w-4" />
+                    Annuler
+                  </Button>
+                </DialogClose>
+                <Button
+                  onClick={handleOutOfStockOrder}
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                  disabled={
+                    !outOfStockFormData.name ||
+                    !outOfStockFormData.email ||
+                    !outOfStockFormData.phone
+                  }
+                >
+                  <Clock className="mr-2 h-4 w-4" />
+                  Confirmer la commande
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
