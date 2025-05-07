@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { login } from "@/services/auth";
 
 const formSchema = z.object({
   email: z.string().email("Adresse e-mail invalide"),
@@ -31,6 +32,7 @@ type FormValues = z.infer<typeof formSchema>;
 const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -46,19 +48,22 @@ const LoginForm = () => {
     setError(null);
 
     try {
-      // This would be replaced with actual authentication logic
-      console.log("Login attempt with:", data);
+      // Use the login service function
+      const user = await login(data.email, data.password);
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // For demo purposes, always succeed unless email contains "error"
-      if (data.email.includes("error")) {
-        throw new Error("Identifiants incorrects. Veuillez réessayer.");
+      // Store remember me preference if checked
+      if (data.rememberMe) {
+        localStorage.setItem("xeption_remember_me", "true");
       }
 
-      // Redirect would happen here after successful login
-      window.location.href = "/account";
+      // Redirect based on user type
+      if (user.isBusinessClient) {
+        // Redirect business clients to business dashboard
+        navigate("/business/dashboard");
+      } else {
+        // Redirect regular users to account page
+        navigate("/account");
+      }
     } catch (err) {
       setError(
         err instanceof Error

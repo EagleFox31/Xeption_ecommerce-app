@@ -29,6 +29,10 @@ const formSchema = z
       .string()
       .min(8, "Le mot de passe doit contenir au moins 8 caractères"),
     confirmPassword: z.string(),
+    isBusinessClient: z.boolean().default(false),
+    companyName: z.string().optional(),
+    businessType: z.string().optional(),
+    employeeCount: z.string().optional(),
     terms: z.literal(true, {
       errorMap: () => ({
         message: "Vous devez accepter les conditions d'utilisation",
@@ -38,7 +42,22 @@ const formSchema = z
   .refine((data) => data.password === data.confirmPassword, {
     message: "Les mots de passe ne correspondent pas",
     path: ["confirmPassword"],
-  });
+  })
+  .refine(
+    (data) => {
+      if (data.isBusinessClient) {
+        return (
+          !!data.companyName && !!data.businessType && !!data.employeeCount
+        );
+      }
+      return true;
+    },
+    {
+      message:
+        "Les informations d'entreprise sont requises pour un compte professionnel",
+      path: ["companyName"],
+    },
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -54,6 +73,10 @@ const RegistrationForm = () => {
       email: "",
       password: "",
       confirmPassword: "",
+      isBusinessClient: false,
+      companyName: "",
+      businessType: "",
+      employeeCount: "",
       terms: false,
     },
   });
@@ -73,6 +96,16 @@ const RegistrationForm = () => {
       if (data.email.includes("exists")) {
         throw new Error("Cette adresse e-mail est déjà utilisée.");
       }
+
+      // In a real app, we would call the register function from auth service
+      // For now, we'll just simulate it
+      const businessDetails = data.isBusinessClient
+        ? {
+            companyName: data.companyName,
+            businessType: data.businessType,
+            employeeCount: data.employeeCount,
+          }
+        : undefined;
 
       // Redirect would happen here after successful registration
       window.location.href = "/auth/login?registered=true";
@@ -222,6 +255,124 @@ const RegistrationForm = () => {
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="isBusinessClient"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    disabled={isLoading}
+                    className="data-[state=checked]:bg-gold-500 data-[state=checked]:border-gold-500 mt-1"
+                  />
+                </FormControl>
+                <FormLabel className="text-sm text-gray-400">
+                  Je crée un compte professionnel pour mon entreprise
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+
+          {form.watch("isBusinessClient") && (
+            <div className="space-y-4 border border-gray-700 rounded-md p-4 bg-gray-800/50 mt-4">
+              <h3 className="text-gold-500 font-medium">
+                Informations Entreprise
+              </h3>
+
+              <FormField
+                control={form.control}
+                name="companyName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-white">
+                      Nom de l'entreprise
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Nom de votre entreprise"
+                        className="bg-gray-800 border-gray-700 text-white"
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-400" />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="businessType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">
+                        Type d'entreprise
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isLoading}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                            <SelectValue placeholder="Sélectionnez un type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                          <SelectItem value="startup">Startup</SelectItem>
+                          <SelectItem value="pme">PME</SelectItem>
+                          <SelectItem value="grande-entreprise">
+                            Grande Entreprise
+                          </SelectItem>
+                          <SelectItem value="administration">
+                            Administration
+                          </SelectItem>
+                          <SelectItem value="ong">ONG</SelectItem>
+                          <SelectItem value="autre">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-red-400" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="employeeCount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white">
+                        Nombre d'employés
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={isLoading}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="bg-gray-800 border-gray-700 text-white">
+                            <SelectValue placeholder="Sélectionnez une taille" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="bg-gray-800 border-gray-700 text-white">
+                          <SelectItem value="1-10">1-10</SelectItem>
+                          <SelectItem value="11-50">11-50</SelectItem>
+                          <SelectItem value="51-200">51-200</SelectItem>
+                          <SelectItem value="201-500">201-500</SelectItem>
+                          <SelectItem value="501+">501+</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage className="text-red-400" />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          )}
 
           <FormField
             control={form.control}

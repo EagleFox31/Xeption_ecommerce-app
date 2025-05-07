@@ -1,5 +1,4 @@
-import React, { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import React from "react";
 import ProductCard from "./ProductCard";
 import { Button } from "../ui/button";
 import {
@@ -11,153 +10,32 @@ import {
 } from "../ui/select";
 import { Slider } from "../ui/slider";
 import { Badge } from "../ui/badge";
+import { Checkbox } from "../ui/checkbox";
 import {
   Filter,
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-
-// Mock data for products
-const mockProducts = [
-  {
-    id: "prod-1",
-    name: "MacBook Pro M2",
-    price: 1200000,
-    originalPrice: 1350000,
-    image:
-      "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&q=80",
-    rating: 4.5,
-    category: "Computers",
-    isNew: true,
-    isFeatured: true,
-  },
-  {
-    id: "prod-2",
-    name: "iPhone 14 Pro Max",
-    price: 750000,
-    originalPrice: 800000,
-    image:
-      "https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=500&q=80",
-    rating: 4.8,
-    category: "Smartphones",
-    isNew: true,
-    isFeatured: false,
-  },
-  {
-    id: "prod-3",
-    name: "Sony WH-1000XM4",
-    price: 180000,
-    originalPrice: 220000,
-    image:
-      "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=500&q=80",
-    rating: 4.7,
-    category: "Accessories",
-    isNew: false,
-    isFeatured: true,
-  },
-  {
-    id: "prod-4",
-    name: "HP LaserJet Pro",
-    price: 350000,
-    originalPrice: 380000,
-    image:
-      "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=500&q=80",
-    rating: 4.2,
-    category: "Consumables",
-    isNew: false,
-    isFeatured: false,
-  },
-  {
-    id: "prod-5",
-    name: "Dell XPS 15",
-    price: 980000,
-    originalPrice: 1050000,
-    image:
-      "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=500&q=80",
-    rating: 4.6,
-    category: "Computers",
-    isNew: false,
-    isFeatured: true,
-  },
-  {
-    id: "prod-6",
-    name: "Samsung Galaxy S23",
-    price: 650000,
-    originalPrice: 700000,
-    image:
-      "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&q=80",
-    rating: 4.4,
-    category: "Smartphones",
-    isNew: true,
-    isFeatured: false,
-  },
-  {
-    id: "prod-7",
-    name: "Apple AirPods Pro",
-    price: 150000,
-    originalPrice: 180000,
-    image:
-      "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=500&q=80",
-    rating: 4.9,
-    category: "Accessories",
-    isNew: false,
-    isFeatured: true,
-  },
-  {
-    id: "prod-8",
-    name: "Canon Ink Cartridges",
-    price: 25000,
-    originalPrice: 30000,
-    image:
-      "https://images.unsplash.com/photo-1563890009599-0c7fbe394e86?w=500&q=80",
-    rating: 4.0,
-    category: "Consumables",
-    isNew: false,
-    isFeatured: false,
-  },
-];
+import { useProductFilters, SpecOption } from "../../hooks/useProductFilters";
 
 interface ProductListingProps {
   initialCategory?: string;
 }
 
 const ProductListing = ({ initialCategory }: ProductListingProps) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const categoryParam =
-    searchParams.get("category") || initialCategory || "all";
-
-  const [sortBy, setSortBy] = useState("featured");
-  const [priceRange, setPriceRange] = useState([0, 2000000]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [filtersVisible, setFiltersVisible] = useState(false);
-
-  // Filter products based on category and price range
-  const filteredProducts = mockProducts.filter((product) => {
-    const categoryMatch =
-      categoryParam === "all" ||
-      product.category.toLowerCase() === categoryParam.toLowerCase();
-    const priceMatch =
-      product.price >= priceRange[0] && product.price <= priceRange[1];
-    return categoryMatch && priceMatch;
-  });
-
-  // Sort products
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
-    switch (sortBy) {
-      case "price-low":
-        return a.price - b.price;
-      case "price-high":
-        return b.price - a.price;
-      case "rating":
-        return b.rating - a.rating;
-      case "newest":
-        return a.isNew ? -1 : b.isNew ? 1 : 0;
-      case "featured":
-      default:
-        return a.isFeatured ? -1 : b.isFeatured ? 1 : 0;
-    }
-  });
+  const {
+    filters,
+    updateFilters,
+    sortedProducts,
+    currentPage,
+    setCurrentPage,
+    filtersVisible,
+    setFiltersVisible,
+    handleCategoryChange,
+    formatPrice,
+    availableSpecs,
+  } = useProductFilters(initialCategory);
 
   // Pagination
   const productsPerPage = 4;
@@ -166,17 +44,6 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
     (currentPage - 1) * productsPerPage,
     currentPage * productsPerPage,
   );
-
-  // Handle category change
-  const handleCategoryChange = (category: string) => {
-    setSearchParams({ category });
-    setCurrentPage(1);
-  };
-
-  // Format price for display
-  const formatPrice = (price: number) => {
-    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " FCFA";
-  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -252,13 +119,58 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
                   defaultValue={[0, 2000000]}
                   max={2000000}
                   step={50000}
-                  value={priceRange}
-                  onValueChange={setPriceRange}
+                  value={filters.priceRange}
+                  onValueChange={(value) =>
+                    updateFilters({ priceRange: value as [number, number] })
+                  }
                   className="my-4"
                 />
                 <div className="flex justify-between text-sm text-gray-400">
-                  <span>{formatPrice(priceRange[0])}</span>
-                  <span>{formatPrice(priceRange[1])}</span>
+                  <span>{formatPrice(filters.priceRange[0])}</span>
+                  <span>{formatPrice(filters.priceRange[1])}</span>
+                </div>
+              </div>
+
+              {/* Specifications Filter */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-2 text-gray-400">
+                  Specifications
+                </h4>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  {availableSpecs
+                    .filter(
+                      (spec) =>
+                        filters.category === "all" ||
+                        spec.category === "general" ||
+                        spec.category === filters.category.toLowerCase(),
+                    )
+                    .map((spec: SpecOption) => (
+                      <div
+                        key={spec.value}
+                        className="flex items-center space-x-2"
+                      >
+                        <Checkbox
+                          id={spec.value}
+                          checked={!!filters.specs[spec.value]}
+                          onCheckedChange={(checked) => {
+                            const newSpecs = { ...filters.specs };
+                            if (checked) {
+                              newSpecs[spec.value] = true;
+                            } else {
+                              delete newSpecs[spec.value];
+                            }
+                            updateFilters({ specs: newSpecs });
+                          }}
+                          className="border-zinc-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                        />
+                        <label
+                          htmlFor={spec.value}
+                          className="text-sm text-gray-300 cursor-pointer"
+                        >
+                          {spec.label}
+                        </label>
+                      </div>
+                    ))}
                 </div>
               </div>
             </div>
@@ -273,7 +185,10 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
                 products
               </p>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select
+                value={filters.sortBy}
+                onValueChange={(value) => updateFilters({ sortBy: value })}
+              >
                 <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-700">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>

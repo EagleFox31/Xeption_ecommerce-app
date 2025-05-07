@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { RefreshCw, ChevronRight, Check } from "lucide-react";
+import { RefreshCw, ChevronRight, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,9 +10,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import DeviceEvaluationForm, {
+  DeviceCondition,
+} from "@/components/tradein/DeviceEvaluationForm";
 
 const TradeInPage = () => {
   const [step, setStep] = useState(1);
+  const [selectedDevice, setSelectedDevice] = useState<{
+    id: number;
+    name: string;
+    description: string;
+  } | null>(null);
+  const [deviceModel, setDeviceModel] = useState("");
+  const [tradeInValue, setTradeInValue] = useState(0);
+  const [deviceCondition, setDeviceCondition] =
+    useState<DeviceCondition | null>(null);
+  const [tradeInOption, setTradeInOption] = useState<"credit" | "cash" | null>(
+    null,
+  );
 
   return (
     <div className="min-h-screen bg-black">
@@ -93,6 +108,10 @@ const TradeInPage = () => {
                       <Button
                         variant="ghost"
                         className="w-full text-gold-500 hover:text-gold-400 hover:bg-gray-800"
+                        onClick={() => {
+                          setSelectedDevice(category);
+                          setStep(2);
+                        }}
                       >
                         Sélectionner <ChevronRight className="ml-2 h-4 w-4" />
                       </Button>
@@ -118,29 +137,43 @@ const TradeInPage = () => {
               transition={{ duration: 0.5 }}
             >
               <h2 className="text-2xl font-bold text-white mb-6">
-                Évaluez votre appareil
+                Évaluez votre {selectedDevice?.name}
               </h2>
-              <Card className="bg-gray-900 border-gray-800">
-                <CardContent className="pt-6">
-                  <p className="text-gray-300 mb-4">
-                    Cette section contiendra un formulaire pour évaluer l'état
-                    de l'appareil.
-                  </p>
-                </CardContent>
-              </Card>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Modèle de l'appareil (optionnel)
+                </label>
+                <input
+                  type="text"
+                  className="w-full p-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                  placeholder="Ex: iPhone 13, MacBook Pro 2021..."
+                  value={deviceModel}
+                  onChange={(e) => setDeviceModel(e.target.value)}
+                />
+              </div>
+
+              <DeviceEvaluationForm
+                deviceType={selectedDevice?.name || ""}
+                deviceModel={deviceModel}
+                onComplete={(value, condition) => {
+                  setTradeInValue(value);
+                  setDeviceCondition(condition);
+                  setStep(3);
+                }}
+              />
+
               <div className="mt-8 flex justify-between">
                 <Button
-                  onClick={() => setStep(1)}
+                  onClick={() => {
+                    setSelectedDevice(null);
+                    setDeviceModel("");
+                    setStep(1);
+                  }}
                   variant="outline"
                   className="border-gray-700 text-white hover:bg-gray-800"
                 >
-                  Retour
-                </Button>
-                <Button
-                  onClick={() => setStep(3)}
-                  className="bg-gold-500 hover:bg-gold-600 text-black"
-                >
-                  Obtenir une estimation
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Retour
                 </Button>
               </div>
             </motion.div>
@@ -159,10 +192,11 @@ const TradeInPage = () => {
                 <CardContent className="pt-6">
                   <div className="text-center">
                     <p className="text-gray-300 mb-2">
-                      Valeur estimée de votre appareil:
+                      Valeur estimée de votre {selectedDevice?.name}{" "}
+                      {deviceModel && `- ${deviceModel}`}:
                     </p>
                     <p className="text-4xl font-bold text-gold-500 mb-4">
-                      25 000 FCFA
+                      {tradeInValue.toLocaleString()} FCFA
                     </p>
                     <p className="text-gray-400 mb-6">
                       Cette valeur peut être utilisée comme crédit pour un
@@ -170,12 +204,16 @@ const TradeInPage = () => {
                       applicables).
                     </p>
                     <div className="flex flex-col sm:flex-row justify-center gap-4">
-                      <Button className="bg-gold-500 hover:bg-gold-600 text-black">
+                      <Button
+                        className={`${tradeInOption === "credit" ? "bg-gold-500" : "bg-gray-700"} hover:bg-gold-600 text-black`}
+                        onClick={() => setTradeInOption("credit")}
+                      >
                         Utiliser comme crédit
                       </Button>
                       <Button
                         variant="outline"
-                        className="border-gray-700 text-white hover:bg-gray-800"
+                        className={`${tradeInOption === "cash" ? "border-gold-500 text-gold-500" : "border-gray-700 text-white"} hover:bg-gray-800`}
+                        onClick={() => setTradeInOption("cash")}
                       >
                         Échanger contre de l'argent
                       </Button>
@@ -189,12 +227,71 @@ const TradeInPage = () => {
                   variant="outline"
                   className="border-gray-700 text-white hover:bg-gray-800"
                 >
-                  Retour
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Retour
                 </Button>
-                <Button className="bg-gold-500 hover:bg-gold-600 text-black">
+                <Button
+                  className="bg-gold-500 hover:bg-gold-600 text-black"
+                  disabled={!tradeInOption}
+                  onClick={() => setStep(4)}
+                >
                   Planifier un rendez-vous
                 </Button>
               </div>
+            </motion.div>
+          )}
+          {step === 4 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <h2 className="text-2xl font-bold text-white mb-6">
+                Planifier un rendez-vous
+              </h2>
+              <Card className="bg-gray-900 border-gray-800">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-gray-300 mb-4">
+                      Merci d'avoir choisi notre service de troc. Un agent vous
+                      contactera sous peu pour confirmer votre rendez-vous.
+                    </p>
+
+                    <div className="bg-gray-800 p-4 rounded-md mb-6">
+                      <h3 className="text-lg font-semibold text-gold-500 mb-2">
+                        Récapitulatif
+                      </h3>
+                      <p className="text-gray-300">
+                        Appareil: {selectedDevice?.name}{" "}
+                        {deviceModel && `- ${deviceModel}`}
+                      </p>
+                      <p className="text-gray-300">
+                        Valeur estimée: {tradeInValue.toLocaleString()} FCFA
+                      </p>
+                      <p className="text-gray-300">
+                        Option choisie:{" "}
+                        {tradeInOption === "credit"
+                          ? "Crédit pour achat"
+                          : "Échange contre argent"}
+                      </p>
+                    </div>
+
+                    <Button
+                      className="bg-gold-500 hover:bg-gold-600 text-black"
+                      onClick={() => {
+                        // Reset all states and go back to step 1
+                        setStep(1);
+                        setSelectedDevice(null);
+                        setDeviceModel("");
+                        setTradeInValue(0);
+                        setDeviceCondition(null);
+                        setTradeInOption(null);
+                      }}
+                    >
+                      Terminer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </motion.div>
           )}
         </div>

@@ -1,9 +1,11 @@
 import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { LocationContext } from "@/context/LocationContext";
 import { ShoppingBag, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface CartItem {
   id: string;
@@ -14,6 +16,7 @@ interface CartItem {
 }
 
 export default function CartPage() {
+  const navigate = useNavigate();
   // Sample cart items
   const cartItems: CartItem[] = [
     {
@@ -57,6 +60,8 @@ export default function CartPage() {
       currency: "XAF",
     }).format(price);
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="bg-black min-h-screen text-white">
@@ -161,7 +166,12 @@ export default function CartPage() {
                     <span className="text-gold-500">{formatPrice(total)}</span>
                   </div>
                 </div>
-                <Button className="w-full mt-6 bg-gold-500 hover:bg-gold-600 text-black font-bold">
+                <Button
+                  className="w-full mt-6 bg-gold-500 hover:bg-gold-600 text-black font-bold"
+                  onClick={() =>
+                    navigate("/checkout", { state: { cartItems } })
+                  }
+                >
                   Proceed to Checkout
                 </Button>
               </div>

@@ -11,6 +11,7 @@ const ProductListing = lazy(
 );
 const ProductDetail = lazy(() => import("./components/product/ProductDetail"));
 const CartPage = lazy(() => import("./components/cart/CartPage"));
+const CheckoutPage = lazy(() => import("./components/checkout/CheckoutPage"));
 
 // Service pages
 const TradeInPage = lazy(() => import("./pages/TradeInPage"));
@@ -28,6 +29,11 @@ const ProfilePage = lazy(() => import("./pages/account/ProfilePage"));
 const OrdersPage = lazy(() => import("./pages/account/OrdersPage"));
 const AddressesPage = lazy(() => import("./pages/account/AddressesPage"));
 
+// Business pages
+const BusinessClientDashboard = lazy(
+  () => import("./components/business/BusinessClientDashboard"),
+);
+
 function App() {
   return (
     <LocationProvider>
@@ -43,6 +49,7 @@ function App() {
               element={<ProductDetail />}
             />
             <Route path="/cart" element={<CartPage />} />
+            <Route path="/checkout" element={<CheckoutPage />} />
 
             {/* Service Routes */}
             <Route path="/trade-in" element={<TradeInPage />} />
@@ -57,6 +64,12 @@ function App() {
             <Route path="/account" element={<ProfilePage />} />
             <Route path="/account/orders" element={<OrdersPage />} />
             <Route path="/account/addresses" element={<AddressesPage />} />
+
+            {/* Business Routes */}
+            <Route
+              path="/business/dashboard"
+              element={<BusinessClientDashboard />}
+            />
 
             {import.meta.env.VITE_TEMPO === "true" && (
               <Route path="/tempobook/*" />

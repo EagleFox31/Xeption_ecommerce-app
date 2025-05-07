@@ -6,6 +6,10 @@ export interface User {
   email: string;
   phone?: string;
   avatar?: string;
+  isBusinessClient?: boolean;
+  companyName?: string;
+  businessType?: string;
+  employeeCount?: string;
 }
 
 // Mock authentication state
@@ -28,6 +32,18 @@ const mockUsers: User[] = [
     email: "marie.k@example.com",
     phone: "+237 677889900",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=marie",
+  },
+  {
+    id: "business-1",
+    firstName: "Pierre",
+    lastName: "Kamdem",
+    email: "business@example.com",
+    phone: "+237 655443322",
+    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=pierre",
+    isBusinessClient: true,
+    companyName: "TechSolutions Cameroun",
+    businessType: "pme",
+    employeeCount: "11-50",
   },
 ];
 
@@ -66,6 +82,12 @@ export const register = async (
   lastName: string,
   email: string,
   password: string,
+  isBusinessClient: boolean = false,
+  businessDetails?: {
+    companyName?: string;
+    businessType?: string;
+    employeeCount?: string;
+  },
 ): Promise<void> => {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -87,6 +109,14 @@ export const register = async (
     lastName,
     email,
     avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${firstName.toLowerCase()}`,
+    isBusinessClient,
+    ...(isBusinessClient && businessDetails
+      ? {
+          companyName: businessDetails.companyName,
+          businessType: businessDetails.businessType,
+          employeeCount: businessDetails.employeeCount,
+        }
+      : {}),
   };
 
   mockUsers.push(newUser);

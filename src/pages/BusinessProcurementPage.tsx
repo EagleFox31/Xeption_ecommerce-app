@@ -1,20 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Building2,
   FileText,
   Users,
   BarChart,
   ShieldCheck,
+  Briefcase,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import RFQForm from "@/components/business/RFQForm";
 import BusinessQuoteForm from "@/components/business/BusinessQuoteForm";
+import { isAuthenticated } from "@/services/auth";
 
 const BusinessProcurementPage = () => {
+  const [activeTab, setActiveTab] = useState<string>("rfq");
+  const isLoggedIn = isAuthenticated();
+
   return (
     <div className="min-h-screen bg-black text-white pb-16">
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-gray-900 to-black py-16">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gold">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gold-500">
             Solutions Entreprise
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto">
@@ -22,6 +30,24 @@ const BusinessProcurementPage = () => {
             les entreprises de toutes tailles. De l'approvisionnement en
             matériel à la mise en place d'infrastructures informatiques.
           </p>
+
+          {!isLoggedIn && (
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Button
+                asChild
+                className="bg-gold-500 hover:bg-gold-600 text-black font-medium"
+              >
+                <a href="/auth/login">Connexion Entreprise</a>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="border-gold-500 text-gold-500 hover:bg-gold-500/10"
+              >
+                <a href="/auth/register">Créer un Compte Entreprise</a>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -30,7 +56,7 @@ const BusinessProcurementPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Column - Benefits */}
           <div>
-            <h2 className="text-2xl font-bold mb-6 text-gold">
+            <h2 className="text-2xl font-bold mb-6 text-gold-500">
               Pourquoi choisir Xeption Network pour votre entreprise?
             </h2>
 
@@ -40,7 +66,7 @@ const BusinessProcurementPage = () => {
                   <Building2 className="h-8 w-8 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-xl text-gold">
+                  <h3 className="font-semibold text-xl text-gold-500">
                     Comptes Entreprise Dédiés
                   </h3>
                   <p className="text-gray-300">
@@ -56,7 +82,7 @@ const BusinessProcurementPage = () => {
                   <FileText className="h-8 w-8 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-xl text-gold">
+                  <h3 className="font-semibold text-xl text-gold-500">
                     Processus RFQ Simplifié
                   </h3>
                   <p className="text-gray-300">
@@ -72,7 +98,7 @@ const BusinessProcurementPage = () => {
                   <Users className="h-8 w-8 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-xl text-gold">
+                  <h3 className="font-semibold text-xl text-gold-500">
                     Solutions d'Équipe
                   </h3>
                   <p className="text-gray-300">
@@ -88,7 +114,7 @@ const BusinessProcurementPage = () => {
                   <BarChart className="h-8 w-8 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-xl text-gold">
+                  <h3 className="font-semibold text-xl text-gold-500">
                     Analyses d'Entreprise
                   </h3>
                   <p className="text-gray-300">
@@ -104,7 +130,7 @@ const BusinessProcurementPage = () => {
                   <ShieldCheck className="h-8 w-8 text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-xl text-gold">
+                  <h3 className="font-semibold text-xl text-gold-500">
                     Garanties Étendues
                   </h3>
                   <p className="text-gray-300">
@@ -116,9 +142,34 @@ const BusinessProcurementPage = () => {
             </div>
           </div>
 
-          {/* Right Column - Form */}
+          {/* Right Column - Forms */}
           <div>
-            <BusinessQuoteForm />
+            <Tabs
+              defaultValue="rfq"
+              className="w-full"
+              onValueChange={setActiveTab}
+            >
+              <TabsList className="grid w-full grid-cols-2 bg-gray-800">
+                <TabsTrigger
+                  value="rfq"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                >
+                  Demande de Devis (RFQ)
+                </TabsTrigger>
+                <TabsTrigger
+                  value="quote"
+                  className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                >
+                  Devis Rapide
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="rfq" className="mt-4">
+                <RFQForm isBusinessClient={isLoggedIn} />
+              </TabsContent>
+              <TabsContent value="quote" className="mt-4">
+                <BusinessQuoteForm />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
