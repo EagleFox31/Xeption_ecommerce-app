@@ -23,7 +23,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { isAuthenticated } from "@/services/auth";
+import { isAuthenticated, getCurrentUser } from "@/services/auth";
+import { submitRFQRequest } from "@/services/rfqService";
 
 const formSchema = z.object({
   companyName: z.string().min(2, "Le nom de l'entreprise est requis"),
@@ -83,17 +84,20 @@ const RFQForm = ({
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Get current user if authenticated
+      const currentUser = getCurrentUser();
 
-      // Generate a reference number
-      const timestamp = new Date().getTime().toString().slice(-6);
-      const random = Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, "0");
-      const reference = `RFQ-${timestamp}-${random}`;
+      // Prepare RFQ data
+      const rfqData = {
+        ...data,
+        userId: currentUser?.id, // Associate with user if logged in
+      };
 
-      setRfqReference(reference);
+      // Submit RFQ request
+      const result = await submitRFQRequest(rfqData);
+
+      // Set reference from the result
+      setRfqReference(result.id);
       setIsSubmitted(true);
 
       if (onSubmitSuccess) {

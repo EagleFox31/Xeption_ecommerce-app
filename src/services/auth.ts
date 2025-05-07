@@ -73,6 +73,11 @@ export const login = async (email: string, password: string): Promise<User> => {
   // Store in localStorage (in a real app, we'd store a token)
   localStorage.setItem("xeption_user", JSON.stringify(user));
 
+  // Import here to avoid circular dependency
+  const { mergeCartsOnLogin } = require("./cartService");
+  // Merge guest cart with user cart
+  mergeCartsOnLogin(user.id);
+
   return user;
 };
 

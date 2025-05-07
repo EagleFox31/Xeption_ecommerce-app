@@ -52,7 +52,7 @@ const AccountLayout = ({ children }: AccountLayoutProps) => {
     <div className="container px-4 py-8 mx-auto">
       <div className="flex flex-col md:flex-row gap-6">
         {/* Mobile Navigation Toggle */}
-        <div className="md:hidden w-full">
+        <div className="md:hidden w-full mb-4">
           <Button
             variant="outline"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

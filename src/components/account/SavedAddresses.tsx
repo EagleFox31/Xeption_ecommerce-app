@@ -74,7 +74,12 @@ const mockAddresses: Address[] = [
 const formSchema = z.object({
   name: z.string().min(1, "Le nom de l'adresse est requis"),
   recipient: z.string().min(1, "Le nom du destinataire est requis"),
-  phone: z.string().min(1, "Le numéro de téléphone est requis"),
+  phone: z
+    .string()
+    .min(1, "Le numéro de téléphone est requis")
+    .refine((val) => /^\+?[0-9]{8,15}$/.test(val), {
+      message: "Le numéro de téléphone doit être valide (8-15 chiffres)",
+    }),
   address: z.string().min(1, "L'adresse est requise"),
   city: z.string().min(1, "La ville est requise"),
   isDefault: z.boolean().optional(),
@@ -375,20 +380,20 @@ const SavedAddresses = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
             {addresses.map((address) => (
               <Card
                 key={address.id}
                 className={`bg-gray-800 border-gray-700 ${address.isDefault ? "ring-2 ring-gold-500" : ""}`}
               >
                 <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       <CardTitle className="text-white">
                         {address.name}
                       </CardTitle>
                       {address.isDefault && (
-                        <Badge className="ml-2 bg-gold-500 text-black">
+                        <Badge className="bg-gold-500 text-black">
                           Par défaut
                         </Badge>
                       )}

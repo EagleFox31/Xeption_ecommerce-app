@@ -27,7 +27,12 @@ const formSchema = z.object({
   firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
   lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
   email: z.string().email("Adresse e-mail invalide"),
-  phone: z.string().optional(),
+  phone: z
+    .string()
+    .optional()
+    .refine((val) => !val || /^\+?[0-9]{8,15}$/.test(val), {
+      message: "Le numéro de téléphone doit être valide (8-15 chiffres)",
+    }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -99,7 +104,7 @@ const UserProfile = () => {
   return (
     <div className="w-full bg-gray-900 rounded-lg border border-gray-800">
       <div className="p-6">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 w-full">
           <div className="flex flex-col items-center">
             <Avatar className="h-24 w-24 border-2 border-gold-500">
               <AvatarImage
@@ -117,7 +122,7 @@ const UserProfile = () => {
             <p className="text-gray-400">{user.email}</p>
           </div>
 
-          <div className="flex-1 w-full">
+          <div className="flex-1 w-full max-w-full">
             <Card className="bg-gray-800 border-gray-700">
               <CardHeader>
                 <CardTitle className="text-white">

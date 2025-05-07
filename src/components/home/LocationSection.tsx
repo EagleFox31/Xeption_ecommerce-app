@@ -23,6 +23,7 @@ export interface DeliveryZone {
   deliveryCost: number;
   isFreeShippingEligible: boolean;
   minFreeShippingAmount?: number;
+  taxRate?: number;
 }
 
 export const deliveryZonesData: DeliveryZone[] = [
@@ -31,6 +32,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     estimatedTime: "Same day - 24h",
     deliveryCost: 0,
     isFreeShippingEligible: true,
+    taxRate: 0.1925, // 19.25% VAT
   },
   {
     city: "Douala",
@@ -38,6 +40,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 5000,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 100000,
+    taxRate: 0.1925,
   },
   {
     city: "Bafoussam",
@@ -45,6 +48,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 7500,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 150000,
+    taxRate: 0.1925,
   },
   {
     city: "Bamenda",
@@ -52,6 +56,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 7500,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 150000,
+    taxRate: 0.1925,
   },
   {
     city: "Garoua",
@@ -59,6 +64,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 10000,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 200000,
+    taxRate: 0.1925,
   },
   {
     city: "Maroua",
@@ -66,6 +72,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 10000,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 200000,
+    taxRate: 0.1925,
   },
   {
     city: "Limbe",
@@ -73,6 +80,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 7500,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 150000,
+    taxRate: 0.1925,
   },
   {
     city: "Buea",
@@ -80,6 +88,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 7500,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 150000,
+    taxRate: 0.1925,
   },
   {
     city: "Kribi",
@@ -87,6 +96,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 7500,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 150000,
+    taxRate: 0.1925,
   },
   {
     city: "Bertoua",
@@ -94,6 +104,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 10000,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 200000,
+    taxRate: 0.1925,
   },
   {
     city: "Ngaoundéré",
@@ -101,6 +112,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 10000,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 200000,
+    taxRate: 0.1925,
   },
   {
     city: "Ebolowa",
@@ -108,6 +120,7 @@ export const deliveryZonesData: DeliveryZone[] = [
     deliveryCost: 10000,
     isFreeShippingEligible: true,
     minFreeShippingAmount: 200000,
+    taxRate: 0.1925,
   },
 ];
 

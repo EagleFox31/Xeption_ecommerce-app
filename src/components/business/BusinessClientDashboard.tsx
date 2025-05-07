@@ -22,7 +22,12 @@ import {
   XCircle,
 } from "lucide-react";
 import { getCurrentUser } from "@/services/auth";
-import { getUserRFQRequests, RFQRequest } from "@/services/rfqService";
+import {
+  getUserRFQRequests,
+  RFQRequest,
+  updateRFQRequestStatus,
+} from "@/services/rfqService";
+import RFQList from "./RFQList";
 
 const BusinessClientDashboard = () => {
   const [activeTab, setActiveTab] = useState<string>("overview");
@@ -31,6 +36,20 @@ const BusinessClientDashboard = () => {
   const navigate = useNavigate();
 
   const user = getCurrentUser();
+
+  const handleStatusUpdate = (
+    rfqId: string,
+    newStatus: RFQRequest["status"],
+  ) => {
+    const updatedRFQ = updateRFQRequestStatus(rfqId, newStatus);
+    if (updatedRFQ) {
+      setUserRFQs((prevRFQs) =>
+        prevRFQs.map((rfq) =>
+          rfq.id === rfqId ? { ...rfq, status: newStatus } : rfq,
+        ),
+      );
+    }
+  };
 
   useEffect(() => {
     // Redirect if not a business client
@@ -266,41 +285,10 @@ const BusinessClientDashboard = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {userRFQs.map((rfq) => (
-                      <div
-                        key={rfq.id}
-                        className="p-4 border border-gray-800 rounded-lg"
-                      >
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                          <div>
-                            <div className="flex items-center">
-                              <h3 className="font-medium text-white">
-                                {rfq.productCategory}
-                              </h3>
-                              <span className="mx-2 text-gray-500">•</span>
-                              <span className="text-sm text-gray-400">
-                                {rfq.id}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-400 mt-1">
-                              Quantité: {rfq.quantity} • Délai: {rfq.timeframe}
-                            </p>
-                          </div>
-                          <div className="mt-2 md:mt-0 flex items-center">
-                            {getStatusBadge(rfq.status)}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="ml-2 text-gray-400 hover:text-white"
-                            >
-                              Détails
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <RFQList
+                    rfqs={userRFQs}
+                    onStatusUpdate={handleStatusUpdate}
+                  />
                 )}
               </CardContent>
             </Card>

@@ -192,7 +192,7 @@ const OrderHistory = () => {
           Historique des commandes
         </h1>
 
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex flex-col md:flex-row gap-4 mb-6 w-full">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <Input
@@ -258,7 +258,7 @@ const OrderHistory = () => {
                 className="bg-gray-800 border-gray-700 overflow-hidden"
               >
                 <CardHeader className="pb-3">
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                       <CardTitle className="text-white">
                         Commande {order.id}
@@ -267,7 +267,7 @@ const OrderHistory = () => {
                         {format(order.date, "d MMMM yyyy", { locale: fr })}
                       </p>
                     </div>
-                    <div className="flex items-center mt-2 md:mt-0 space-x-3">
+                    <div className="flex items-center mt-2 sm:mt-0 space-x-3">
                       {getStatusBadge(order.status)}
                       <span className="text-lg font-semibold text-white">
                         {formatPrice(order.total)}
@@ -276,7 +276,7 @@ const OrderHistory = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {order.items.map((item) => (
                       <div
                         key={item.id}

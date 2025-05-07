@@ -76,5 +76,28 @@ export const updateRFQRequestStatus = (
   if (requestIndex === -1) return undefined;
 
   rfqRequests[requestIndex].status = status;
+
+  // In a real application, this would be where we'd update the database
+  // and potentially trigger notifications to relevant parties
+  console.log(`RFQ ${id} status updated to ${status}`);
+
   return rfqRequests[requestIndex];
+};
+
+// Get the next available status for an RFQ
+export const getNextRFQStatus = (
+  currentStatus: RFQRequest["status"],
+): RFQRequest["status"] => {
+  switch (currentStatus) {
+    case "pending":
+      return "processing";
+    case "processing":
+      return "quoted";
+    case "quoted":
+      return "accepted";
+    case "accepted":
+      return "completed";
+    default:
+      return currentStatus;
+  }
 };

@@ -26,6 +26,7 @@ import {
   AlertCircle,
   Loader2,
   Smartphone,
+  Banknote,
 } from "lucide-react";
 import {
   processMobilePayment,
@@ -46,8 +47,10 @@ interface CheckoutProps {
 interface OrderData {
   orderId: string;
   items: any[];
-  total: number;
+  subtotal: number;
+  tax: number;
   deliveryCost: number;
+  total: number;
   deliveryMethod: string;
   paymentMethod: string;
   paymentStatus?: "pending" | "completed" | "failed";
@@ -186,13 +189,15 @@ export default function CheckoutPage({
   const locationCartItems = location.state?.cartItems;
   const cartItems = propCartItems || locationCartItems || defaultCartItems;
 
-  const { userLocation, calculateDeliveryCost } = useContext(LocationContext);
+  const { userLocation, calculateDeliveryCost, calculateTax } =
+    useContext(LocationContext);
   const subtotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0,
   );
   const deliveryCost = calculateDeliveryCost(subtotal);
-  const total = subtotal + deliveryCost;
+  const tax = calculateTax(subtotal);
+  const total = subtotal + deliveryCost + tax;
 
   // Generate a unique order ID
   const generateOrderId = () => {
@@ -248,8 +253,10 @@ export default function CheckoutPage({
     const newOrderData: OrderData = {
       orderId: orderId,
       items: cartItems,
-      total: total,
+      subtotal: subtotal,
+      tax: tax,
       deliveryCost: deliveryCost,
+      total: total,
       deliveryMethod: deliveryForm.getValues().deliveryMethod,
       paymentMethod: data.paymentMethod,
       paymentStatus: "pending",
@@ -576,7 +583,19 @@ export default function CheckoutPage({
                                       Visa, Mastercard, American Express
                                     </div>
                                   </Label>
-                                  <CreditCard className="h-5 w-5 text-gray-400" />
+                                  <div className="flex items-center space-x-2">
+                                    <img
+                                      src="https://api.dicebear.com/7.x/avataaars/svg?seed=visa"
+                                      alt="Visa"
+                                      className="h-6 w-6"
+                                    />
+                                    <img
+                                      src="https://api.dicebear.com/7.x/avataaars/svg?seed=mastercard"
+                                      alt="Mastercard"
+                                      className="h-6 w-6"
+                                    />
+                                    <CreditCard className="h-5 w-5 text-gray-400" />
+                                  </div>
                                 </div>
                                 <div className="flex items-center space-x-2 rounded-lg border border-gray-800 p-4">
                                   <RadioGroupItem value="mobile" id="mobile" />
@@ -588,7 +607,15 @@ export default function CheckoutPage({
                                       MTN Mobile Money, Orange Money
                                     </div>
                                   </Label>
-                                  <Smartphone className="h-5 w-5 text-gray-400" />
+                                  <div className="flex items-center space-x-2">
+                                    <div className="bg-yellow-500 rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold">
+                                      MTN
+                                    </div>
+                                    <div className="bg-orange-500 rounded-full h-6 w-6 flex items-center justify-center text-xs font-bold">
+                                      OM
+                                    </div>
+                                    <Smartphone className="h-5 w-5 text-gray-400" />
+                                  </div>
                                 </div>
                                 <div className="flex items-center space-x-2 rounded-lg border border-gray-800 p-4">
                                   <RadioGroupItem value="cash" id="cash" />
@@ -600,7 +627,7 @@ export default function CheckoutPage({
                                       Pay when you receive your order
                                     </div>
                                   </Label>
-                                  <div className="text-gray-400">💵</div>
+                                  <Banknote className="h-5 w-5 text-gray-400" />
                                 </div>
                               </RadioGroup>
                             </FormControl>
@@ -765,6 +792,32 @@ export default function CheckoutPage({
                               </span>
                             </div>
                           ))}
+                          <div className="pt-2 border-t border-gray-700">
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Subtotal</span>
+                              <span className="text-white">
+                                {formatPrice(subtotal)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Tax</span>
+                              <span className="text-white">
+                                {formatPrice(tax)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-400">Delivery</span>
+                              <span className="text-white">
+                                {formatPrice(deliveryCost)}
+                              </span>
+                            </div>
+                            <div className="flex justify-between font-bold mt-2">
+                              <span className="text-white">Total</span>
+                              <span className="text-gold-500">
+                                {formatPrice(total)}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </div>
 
@@ -834,8 +887,12 @@ export default function CheckoutPage({
                     <span className="text-white">{formatPrice(subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
+                    <span className="text-gray-400">Tax (19.25% VAT)</span>
+                    <span className="text-white">{formatPrice(tax)}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span className="text-gray-400">
-                      Delivery to {selectedLocation || "Yaoundé"}
+                      Delivery to {userLocation}
                     </span>
                     <span className="text-white">
                       {formatPrice(deliveryCost)}

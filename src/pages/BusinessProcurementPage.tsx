@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Building2,
   FileText,
@@ -6,16 +7,29 @@ import {
   BarChart,
   ShieldCheck,
   Briefcase,
+  AlertCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import RFQForm from "@/components/business/RFQForm";
 import BusinessQuoteForm from "@/components/business/BusinessQuoteForm";
-import { isAuthenticated } from "@/services/auth";
+import { isAuthenticated, getCurrentUser } from "@/services/auth";
 
 const BusinessProcurementPage = () => {
   const [activeTab, setActiveTab] = useState<string>("rfq");
+  const [showBusinessAlert, setShowBusinessAlert] = useState<boolean>(false);
   const isLoggedIn = isAuthenticated();
+  const currentUser = getCurrentUser();
+  const isBusinessClient = currentUser?.isBusinessClient || false;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // If user is logged in but not a business client, show alert
+    if (isLoggedIn && !isBusinessClient) {
+      setShowBusinessAlert(true);
+    }
+  }, [isLoggedIn, isBusinessClient]);
 
   return (
     <div className="min-h-screen bg-black text-white pb-16">
@@ -31,6 +45,17 @@ const BusinessProcurementPage = () => {
             matériel à la mise en place d'infrastructures informatiques.
           </p>
 
+          {showBusinessAlert && (
+            <Alert className="mt-6 mb-4 bg-blue-900/50 border-blue-800 text-white max-w-3xl mx-auto">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Votre compte n'est pas enregistré comme compte entreprise. Pour
+                accéder à toutes les fonctionnalités business, veuillez mettre à
+                jour votre profil ou contacter notre service client.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {!isLoggedIn && (
             <div className="mt-8 flex flex-wrap justify-center gap-4">
               <Button
@@ -45,6 +70,17 @@ const BusinessProcurementPage = () => {
                 className="border-gold-500 text-gold-500 hover:bg-gold-500/10"
               >
                 <a href="/auth/register">Créer un Compte Entreprise</a>
+              </Button>
+            </div>
+          )}
+
+          {isLoggedIn && isBusinessClient && (
+            <div className="mt-8">
+              <Button
+                onClick={() => navigate("/business/dashboard")}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Accéder à votre tableau de bord
               </Button>
             </div>
           )}
@@ -164,7 +200,7 @@ const BusinessProcurementPage = () => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="rfq" className="mt-4">
-                <RFQForm isBusinessClient={isLoggedIn} />
+                <RFQForm isBusinessClient={isBusinessClient} />
               </TabsContent>
               <TabsContent value="quote" className="mt-4">
                 <BusinessQuoteForm />

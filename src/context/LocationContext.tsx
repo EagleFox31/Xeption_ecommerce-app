@@ -9,6 +9,7 @@ interface LocationContextType {
   setUserLocation: (location: string) => void;
   getDeliveryZone: (location?: string) => DeliveryZone | undefined;
   calculateDeliveryCost: (subtotal: number, location?: string) => number;
+  calculateTax: (subtotal: number, location?: string) => number;
 }
 
 export const LocationContext = createContext<LocationContextType | undefined>(
@@ -42,6 +43,16 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
     return zone.deliveryCost;
   };
 
+  const calculateTax = (subtotal: number, location?: string): number => {
+    const zone = getDeliveryZone(location);
+    if (!zone) return 0;
+
+    // Default tax rate is 19.25% (VAT in Cameroon)
+    const taxRate = zone.taxRate || 0.1925;
+
+    return Math.round(subtotal * taxRate);
+  };
+
   return (
     <LocationContext.Provider
       value={{
@@ -49,6 +60,7 @@ export const LocationProvider = ({ children }: { children: ReactNode }) => {
         setUserLocation,
         getDeliveryZone,
         calculateDeliveryCost,
+        calculateTax,
       }}
     >
       {children}
