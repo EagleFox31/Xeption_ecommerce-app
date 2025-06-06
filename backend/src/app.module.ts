@@ -7,6 +7,7 @@ import { CartOrderModule } from "./modules/cartorder/cartorder.module";
 import { DeliveryModule } from "./modules/delivery/delivery.module";
 import { TradeInModule } from "./modules/tradein/tradein.module";
 import { AdvisoryModule } from "./modules/advisory/advisory.module";
+import { RFQModule } from "./modules/rfq/rfq.module";
 import { configValidation } from "./config/config.validation";
 
 @Module({
@@ -23,6 +24,7 @@ import { configValidation } from "./config/config.validation";
     DeliveryModule,
     TradeInModule,
     AdvisoryModule,
+    RFQModule,
   ],
   controllers: [],
   providers: [],
