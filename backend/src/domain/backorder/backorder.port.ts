@@ -56,6 +56,8 @@ export interface BackorderRepository {
   getExpiredBackorderRequests(days: number): Promise<BackorderRequest[]>;
 }
 
+export const BACKORDER_NOTIFICATION_SERVICE = 'BACKORDER_NOTIFICATION_SERVICE';
+
 export interface BackorderNotificationService {
   sendAvailabilityNotification(
     backorderRequest: BackorderRequest,
@@ -77,7 +79,7 @@ export const PRODUCT_STOCK_SERVICE = 'PRODUCT_STOCK_SERVICE';
 
 export interface ProductStockService {
   checkStockLevel(productId: string): Promise<number>;
-  getExpectedRestockDate(productId: string): Promise<Date | null>;
+  getEarliestOrderedBackorderDate(productId: string): Promise<Date | null>;
   subscribeToStockUpdates(
     productId: string,
     callback: (stock: number) => void,
