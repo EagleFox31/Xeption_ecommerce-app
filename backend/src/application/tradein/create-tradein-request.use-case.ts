@@ -3,13 +3,16 @@ import { TradeInRepositoryPort, TRADEIN_REPOSITORY } from "../../domain/tradein/
 import {
   TradeInRequest,
   DeviceCondition,
+  TradeInStatus,
 } from "../../domain/tradein/tradein.entity";
+import { TradeInValuationService } from "../../domain/tradein/tradein-valuation.service";
 
 @Injectable()
 export class CreateTradeInRequestUseCase {
   constructor(
     @Inject(TRADEIN_REPOSITORY)
-    private readonly tradeInRepository: TradeInRepositoryPort
+    private readonly tradeInRepository: TradeInRepositoryPort,
+    private readonly valuationService: TradeInValuationService,
   ) {}
 
   async execute(
@@ -26,8 +29,8 @@ export class CreateTradeInRequestUseCase {
     }
 
     // Calculer la valeur estimée basée sur l'état
-    const estimatedValue = this.calculateEstimatedValue(
-      device.baseValue,
+    const estimatedValue = await this.valuationService.estimate(
+      deviceId,
       condition,
     );
 
@@ -39,25 +42,10 @@ export class CreateTradeInRequestUseCase {
       description,
       images,
       estimatedValue,
-      status: "pending" as any,
+      status: TradeInStatus.PENDING,
     });
 
     return tradeInRequest;
   }
 
-  private calculateEstimatedValue(
-    baseValue: number,
-    condition: DeviceCondition,
-  ): number {
-    const conditionMultipliers = {
-      excellent: 0.85,
-      good: 0.7,
-      fair: 0.5,
-      poor: 0.3,
-      broken: 0.15,
-    };
-
-    const multiplier = conditionMultipliers[condition] || 0.15;
-    return Math.round(baseValue * multiplier);
-  }
 }

@@ -4,7 +4,8 @@ import { GetTradeInRequestUseCase } from "../../application/tradein/get-tradein-
 import { GetUserTradeInRequestsUseCase } from "../../application/tradein/get-user-tradein-requests.use-case";
 import { SearchDevicesUseCase } from "../../application/tradein/search-devices.use-case";
 import { EvaluateTradeInUseCase } from "../../application/tradein/evaluate-tradein.use-case";
-import { TradeInRepositoryPort, TradeInServicePort, TRADEIN_SERVICE } from "../../domain/tradein/tradein.port";
+import { TradeInRepositoryPort, TRADEIN_REPOSITORY } from "../../domain/tradein/tradein.port";
+import { TradeInValuationService } from "../../domain/tradein/tradein-valuation.service";
 import {
   DeviceCondition,
   TradeInStatus,
@@ -20,8 +21,9 @@ export class TradeInService {
     private readonly getUserTradeInRequestsUseCase: GetUserTradeInRequestsUseCase,
     private readonly searchDevicesUseCase: SearchDevicesUseCase,
     private readonly evaluateTradeInUseCase: EvaluateTradeInUseCase,
-    @Inject(TRADEIN_SERVICE)
-    private readonly tradeInService: TradeInServicePort,
+    @Inject(TRADEIN_REPOSITORY)
+    private readonly tradeInRepository: TradeInRepositoryPort,
+    private readonly valuationService: TradeInValuationService,
   ) {}
 
   async createTradeInRequest(
@@ -56,7 +58,7 @@ export class TradeInService {
   }
 
   async getDevicesByCategory(category: string): Promise<Device[]> {
-    return await this.tradeInService.getDevicesByCategory(category);
+    return await this.tradeInRepository.getDevicesByCategory(category);
   }
 
   async evaluateTradeIn(
@@ -82,13 +84,16 @@ export class TradeInService {
     status: TradeInStatus,
     evaluatorNotes?: string,
   ): Promise<TradeInRequest> {
-    return await this.tradeInService.updateTradeInStatus(id, status, evaluatorNotes);
+    return await this.tradeInRepository.updateTradeInRequest(id, {
+      status,
+      evaluatorNotes,
+    });
   }
 
   async calculateEstimatedValue(
     deviceId: string,
     condition: DeviceCondition,
   ): Promise<number> {
-    return await this.tradeInService.calculateEstimatedValue(deviceId, condition);
+    return await this.valuationService.estimate(deviceId, condition);
   }
 }
