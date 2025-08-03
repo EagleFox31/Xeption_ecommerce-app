@@ -1,9 +1,12 @@
-import { Injectable } from "@nestjs/common";
-import { AuthRepositoryPort } from "../../domain/auth/auth.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { AuthRepositoryPort, AUTH_REPOSITORY } from "../../domain/auth/auth.port";
 
 @Injectable()
 export class ValidateUserUseCase {
-  constructor(private readonly authRepository: AuthRepositoryPort) {}
+  constructor(
+    @Inject(AUTH_REPOSITORY)
+    private readonly authRepository: AuthRepositoryPort
+  ) {}
 
   async execute(userId: string): Promise<boolean> {
     return await this.authRepository.validateUserExists(userId);

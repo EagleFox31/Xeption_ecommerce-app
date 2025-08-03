@@ -20,7 +20,7 @@ import { Type } from "class-transformer";
 import {
   BackorderStatus,
   BackorderPriority,
-} from "../../domain/backorder/backorder.entity";
+} from "../../../domain/backorder/backorder.entity";
 
 // DTOs pour les préférences de notification
 export class NotificationPreferencesDto {

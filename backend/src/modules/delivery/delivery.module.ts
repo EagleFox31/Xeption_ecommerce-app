@@ -8,18 +8,20 @@ import { DeliveryController } from "./delivery.controller";
 import { DeliveryService } from "./delivery.service";
 import { CalculateDeliveryFeeUseCase } from "../../application/delivery/calculate-delivery-fee.use-case";
 import { GetAvailableZonesUseCase } from "../../application/delivery/get-available-zones.use-case";
-import { DeliveryRepository } from "../../infrastructure/supabase/repositories/delivery.repository";
-import { DeliveryRepositoryPort } from "../../domain/delivery/delivery.port";
+import { PrismaDeliveryRepository } from "../../infrastructure/prisma/repositories/delivery.repository";
+import { DELIVERY_REPOSITORY } from "../../domain/delivery/delivery.port";
+import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 
 @Module({
+  imports: [PrismaModule],
   controllers: [DeliveryController],
   providers: [
     DeliveryService,
     CalculateDeliveryFeeUseCase,
     GetAvailableZonesUseCase,
     {
-      provide: DeliveryRepositoryPort,
-      useClass: DeliveryRepository,
+      provide: DELIVERY_REPOSITORY,
+      useClass: PrismaDeliveryRepository,
     },
   ],
   exports: [DeliveryService],

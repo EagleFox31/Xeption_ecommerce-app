@@ -1,5 +1,7 @@
 import { RFQ, RFQRequest, RFQItem, RFQStatus } from "./rfq.entity";
 
+export const RFQ_REPOSITORY = Symbol('RFQRepositoryPort');
+
 export interface RFQRepository {
   // RFQ Requests
   createRFQRequest(

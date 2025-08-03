@@ -1,6 +1,8 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 import { CartOrderController } from "../../modules/cartorder/cartorder.controller";
 import { CartOrderService } from "../../modules/cartorder/cartorder.service";
+import { InvoiceService } from "../../modules/cartorder/invoice.service";
 import { JwtPayload } from "../../common/auth/jwt.types";
 import { CartStatus } from "../../domain/cartorder/cart.entity";
 import {
@@ -11,6 +13,8 @@ import {
   PaymentMethod,
   PaymentProvider,
 } from "../../domain/cartorder/payment.entity";
+import { AuthGuard } from "../../common/auth/auth.guard";
+import { createMockConfigService, MockAuthGuard } from "../test-utils";
 
 describe("CartOrderController", () => {
   let controller: CartOrderController;
@@ -88,6 +92,12 @@ describe("CartOrderController", () => {
     getPaymentsByOrderId: jest.fn(),
     getPaymentsByUserId: jest.fn(),
     processPayment: jest.fn(),
+    getOrderInvoice: jest.fn(),
+  };
+
+  const mockInvoiceService = {
+    generateInvoiceData: jest.fn(),
+    generatePdf: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -98,8 +108,19 @@ describe("CartOrderController", () => {
           provide: CartOrderService,
           useValue: mockCartOrderService,
         },
+        {
+          provide: InvoiceService,
+          useValue: mockInvoiceService,
+        },
+        {
+          provide: ConfigService,
+          useFactory: createMockConfigService,
+        },
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useClass(MockAuthGuard)
+    .compile();
 
     controller = module.get<CartOrderController>(CartOrderController);
     service = module.get<CartOrderService>(CartOrderService);

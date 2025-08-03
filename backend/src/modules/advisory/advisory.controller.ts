@@ -23,16 +23,29 @@ import {
   AdvisoryRequestResponseDto,
   AdvisoryRequestListResponseDto,
 } from "./dto/advisory.dto";
+import { UpdateAdvisoryRequestStatusDto } from "./dto/status-update.dto";
 
+/**
+ * Advisory API Controller
+ *
+ * Endpoints are organized by resource type:
+ * 1. Request operations (/advisory/requests/*)
+ * 2. Recommendation operations (/advisory/recommendations/*)
+ */
 @Controller("advisory")
 @UseGuards(AuthGuard)
 export class AdvisoryController {
   constructor(private readonly advisoryService: AdvisoryService) {}
 
   /**
+   * REQUEST OPERATIONS
+   * Endpoints pour la gestion des demandes de conseil
+   */
+
+  /**
    * Create a new advisory request
    */
-  @Post()
+  @Post("requests")
   @HttpCode(HttpStatus.CREATED)
   async createAdvisoryRequest(
     @CurrentUser() user: AuthenticatedUser,
@@ -44,7 +57,7 @@ export class AdvisoryController {
   /**
    * Get current user's advisory requests
    */
-  @Get("my-requests")
+  @Get("requests/my")
   async getMyAdvisoryRequests(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: AdvisoryRequestQueryDto,
@@ -55,7 +68,7 @@ export class AdvisoryController {
   /**
    * Get current user's pending advisory requests
    */
-  @Get("my-requests/pending")
+  @Get("requests/my/pending")
   async getMyPendingRequests(
     @CurrentUser() user: AuthenticatedUser,
     @Query("limit") limit?: number,
@@ -66,7 +79,7 @@ export class AdvisoryController {
   /**
    * Get current user's completed advisory requests
    */
-  @Get("my-requests/completed")
+  @Get("requests/my/completed")
   async getMyCompletedRequests(
     @CurrentUser() user: AuthenticatedUser,
     @Query("limit") limit?: number,
@@ -75,14 +88,25 @@ export class AdvisoryController {
   }
 
   /**
+   * RECOMMENDATION OPERATIONS
+   * Endpoints pour obtenir des recommandations produits
+   */
+
+  /**
    * Get product recommendations based on budget and preferences
    */
   @Post("recommendations")
   async getProductRecommendations(
     @Body() recommendationsDto: GetProductRecommendationsDto,
   ) {
+    // Ensure budget is compatible with domain entity
+    const budget = {
+      ...recommendationsDto.budget,
+      is_flexible: recommendationsDto.budget.is_flexible || false // Default to false if not provided
+    };
+    
     return this.advisoryService.getProductRecommendations(
-      recommendationsDto.budget,
+      budget,
       recommendationsDto.preferences,
       recommendationsDto.limit,
     );
@@ -91,7 +115,7 @@ export class AdvisoryController {
   /**
    * Get a specific advisory request by ID
    */
-  @Get(":id")
+  @Get("requests/:id")
   async getAdvisoryRequest(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -102,7 +126,7 @@ export class AdvisoryController {
   /**
    * Update an advisory request
    */
-  @Put(":id")
+  @Put("requests/:id")
   async updateAdvisoryRequest(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
@@ -114,12 +138,30 @@ export class AdvisoryController {
   /**
    * Delete an advisory request
    */
-  @Delete(":id")
+  @Delete("requests/:id")
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAdvisoryRequest(
     @CurrentUser() user: AuthenticatedUser,
     @Param("id") id: string,
   ): Promise<void> {
     return this.advisoryService.deleteAdvisoryRequest(user.id, id);
+  }
+
+  /**
+   * Update advisory request status only
+   * This endpoint allows explicit status updates for specific business workflows
+   */
+  @Put("requests/:id/status")
+  async updateAdvisoryRequestStatus(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id") id: string,
+    @Body() statusUpdate: UpdateAdvisoryRequestStatusDto,
+  ): Promise<AdvisoryRequestResponseDto> {
+    // Create a DTO with only status field
+    const updateDto: UpdateAdvisoryRequestDto = {
+      status: statusUpdate.status
+    };
+    
+    return this.advisoryService.updateAdvisoryRequest(user.id, id, updateDto);
   }
 }

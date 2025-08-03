@@ -1,12 +1,12 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { NotFoundException } from "@nestjs/common";
 import { GetUserProfileUseCase } from "../../application/auth/get-user-profile.use-case";
-import { AuthRepositoryPort } from "../../domain/auth/auth.port";
+import { AuthRepositoryPort, AUTH_REPOSITORY } from "../../domain/auth/auth.port";
 import { UserProfile } from "../../domain/auth/auth.entity";
 
 describe("GetUserProfileUseCase", () => {
   let useCase: GetUserProfileUseCase;
-  let authRepository: AuthRepositoryPort;
+  let authRepository: jest.Mocked<AuthRepositoryPort>;
 
   const mockUserProfile = new UserProfile(
     "123",
@@ -20,21 +20,24 @@ describe("GetUserProfileUseCase", () => {
     new Date(),
   );
 
+  const mockAuthRepository = {
+    getUserProfile: jest.fn(),
+    validateUserExists: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GetUserProfileUseCase,
         {
-          provide: AuthRepositoryPort,
-          useValue: {
-            getUserProfile: jest.fn(),
-          },
+          provide: AUTH_REPOSITORY,
+          useValue: mockAuthRepository,
         },
       ],
     }).compile();
 
     useCase = module.get<GetUserProfileUseCase>(GetUserProfileUseCase);
-    authRepository = module.get<AuthRepositoryPort>(AuthRepositoryPort);
+    authRepository = module.get(AUTH_REPOSITORY);
   });
 
   it("should be defined", () => {

@@ -1,12 +1,15 @@
 import React, { useState } from "react";
 import { Button } from "../ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import ProductCard from "../product/ProductCard";
+import { useFeaturedProducts } from "@/hooks/useCatalog";
+import { Product } from "@/services/catalogService";
+import { useCart } from "@/hooks/useCart";
 
 interface FeaturedProductsProps {
   title?: string;
   subtitle?: string;
-  products?: Array<{
+  products?: Array<Product | {
     id: string;
     name: string;
     price: number;
@@ -19,80 +22,44 @@ interface FeaturedProductsProps {
   }>;
 }
 
+// Helper function to prepare product data for display
+const prepareProductForDisplay = (product: any) => {
+  return {
+    id: product.id,
+    name: product.name,
+    price: product.price,
+    originalPrice: product.originalPrice || product.price * 1.2,
+    image: product.images?.[0] || product.image || '/placeholder.jpg',
+    rating: product.rating || 4,
+    category: product.categoryName || product.categoryId || product.category || 'unknown',
+    isNew: product.isNew || (product.createdAt ? 
+      (Date.now() - new Date(product.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000) 
+      : false),
+    isFeatured: product.isFeatured || product.features?.includes('featured') || false
+  };
+};
+
 const FeaturedProducts = ({
   title = "Produits Vedettes",
   subtitle = "Découvrez notre sélection de produits tech les plus populaires",
-  products = [
-    {
-      id: "prod-1",
-      name: "MacBook Pro M2 - Le meilleur pour les pros",
-      price: 1200000,
-      originalPrice: 1350000,
-      image:
-        "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&q=80",
-      rating: 4.8,
-      category: "Ordinateurs",
-      isFeatured: true,
-    },
-    {
-      id: "prod-2",
-      name: "iPhone 14 Pro - Dernière génération",
-      price: 750000,
-      originalPrice: 850000,
-      image:
-        "https://images.unsplash.com/photo-1591337676887-a217a6970a8a?w=500&q=80",
-      rating: 4.9,
-      category: "Smartphones",
-      isNew: true,
-      isFeatured: true,
-    },
-    {
-      id: "prod-3",
-      name: "Samsung Galaxy S23 Ultra - Puissance maximale",
-      price: 680000,
-      originalPrice: 720000,
-      image:
-        "https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=500&q=80",
-      rating: 4.7,
-      category: "Smartphones",
-      isFeatured: true,
-    },
-    {
-      id: "prod-4",
-      name: "Écouteurs Sony WH-1000XM5 - Son premium",
-      price: 220000,
-      originalPrice: 250000,
-      image:
-        "https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=500&q=80",
-      rating: 4.6,
-      category: "Accessoires",
-      isFeatured: true,
-    },
-    {
-      id: "prod-5",
-      name: "Dell XPS 15 - Performance et élégance",
-      price: 950000,
-      image:
-        "https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=500&q=80",
-      rating: 4.5,
-      category: "Ordinateurs",
-      isFeatured: true,
-    },
-    {
-      id: "prod-6",
-      name: "Imprimante HP LaserJet Pro - Pour bureau",
-      price: 180000,
-      originalPrice: 210000,
-      image:
-        "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=500&q=80",
-      rating: 4.3,
-      category: "Consommables",
-      isFeatured: true,
-    },
-  ],
+  products: propProducts,
 }: FeaturedProductsProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const productsPerView = 4; // Number of products to show at once
+  
+  // Get cart functionality
+  const { addToCart, isAddingToCart } = useCart();
+  
+  // Fetch featured products from the API
+  const { data: featuredProducts, isLoading, error } = useFeaturedProducts();
+  
+  // Use provided products prop or API data
+  const products = propProducts || featuredProducts || [];
+  
+  // Handle adding to cart
+  const handleAddToCart = (product: any) => {
+    addToCart({ productId: product.id, quantity: 1 });
+  };
 
   const nextSlide = () => {
     if (currentIndex + productsPerView < products.length) {
@@ -110,11 +77,6 @@ const FeaturedProducts = ({
     }
   };
 
-  const visibleProducts = products.slice(
-    currentIndex,
-    currentIndex + productsPerView,
-  );
-
   return (
     <section className="w-full py-12 bg-gray-950 text-white">
       <div className="container mx-auto px-4">
@@ -130,6 +92,7 @@ const FeaturedProducts = ({
               size="icon"
               onClick={prevSlide}
               className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+              disabled={isLoading || products.length <= productsPerView}
             >
               <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -138,6 +101,7 @@ const FeaturedProducts = ({
               size="icon"
               onClick={nextSlide}
               className="border-gray-700 text-gray-300 hover:bg-gray-800 hover:text-white"
+              disabled={isLoading || products.length <= productsPerView}
             >
               <ChevronRight className="h-5 w-5" />
             </Button>
@@ -146,47 +110,66 @@ const FeaturedProducts = ({
 
         {/* Products carousel */}
         <div className="relative overflow-hidden">
-          <div
-            className="flex gap-6 transition-transform duration-300 ease-in-out"
-            style={{ transform: `translateX(-${currentIndex * (280 + 24)}px)` }}
-          >
-            {products.map((product) => (
-              <div key={product.id} className="flex-shrink-0">
-                <ProductCard
-                  id={product.id}
-                  name={product.name}
-                  price={product.price}
-                  originalPrice={product.originalPrice}
-                  image={product.image}
-                  rating={product.rating}
-                  category={product.category}
-                  isNew={product.isNew}
-                  isFeatured={product.isFeatured}
-                  onAddToCart={() =>
-                    console.log(`Added ${product.name} to cart`)
-                  }
-                  onAddToFavorite={() =>
-                    console.log(`Added ${product.name} to favorites`)
-                  }
-                />
-              </div>
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-16">
+              <Loader2 className="h-10 w-10 animate-spin text-amber-500" />
+              <span className="ml-3 text-gray-400">Loading featured products...</span>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center py-16">
+              <AlertCircle className="h-10 w-10 text-red-500 mb-4" />
+              <p className="text-gray-400">Failed to load featured products</p>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="flex justify-center items-center py-16">
+              <p className="text-gray-400">No featured products available</p>
+            </div>
+          ) : (
+            <div
+              className="flex gap-6 transition-transform duration-300 ease-in-out"
+              style={{ transform: `translateX(-${currentIndex * (280 + 24)}px)` }}
+            >
+              {products.map((product, index) => {
+                const displayProduct = prepareProductForDisplay(product);
+                return (
+                  <div key={displayProduct.id || index} className="flex-shrink-0">
+                    <ProductCard
+                      id={displayProduct.id}
+                      name={displayProduct.name}
+                      price={displayProduct.price}
+                      originalPrice={displayProduct.originalPrice}
+                      image={displayProduct.image}
+                      rating={displayProduct.rating}
+                      category={displayProduct.category}
+                      isNew={displayProduct.isNew}
+                      isFeatured={displayProduct.isFeatured}
+                      onAddToCart={() => handleAddToCart(product)}
+                      onAddToFavorite={() =>
+                        console.log(`Added ${displayProduct.name} to favorites`)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Pagination indicators */}
-        <div className="flex justify-center mt-8 gap-2">
-          {Array.from({
-            length: Math.ceil(products.length / productsPerView),
-          }).map((_, index) => (
-            <button
-              key={index}
-              className={`h-2 rounded-full transition-all ${index === Math.floor(currentIndex / productsPerView) ? "w-8 bg-amber-500" : "w-2 bg-gray-700"}`}
-              onClick={() => setCurrentIndex(index * productsPerView)}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
+        {products.length > 0 && (
+          <div className="flex justify-center mt-8 gap-2">
+            {Array.from({
+              length: Math.ceil(products.length / productsPerView),
+            }).map((_, index) => (
+              <button
+                key={index}
+                className={`h-2 rounded-full transition-all ${index === Math.floor(currentIndex / productsPerView) ? "w-8 bg-amber-500" : "w-2 bg-gray-700"}`}
+                onClick={() => setCurrentIndex(index * productsPerView)}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -1,5 +1,10 @@
 import { AdvisoryRequest, AdvisoryRequestStatus } from "./advisory.entity";
 
+/**
+ * Injection token for AdvisoryRepositoryPort
+ */
+export const ADVISORY_REPOSITORY = 'ADVISORY_REPOSITORY';
+
 export interface AdvisoryRequestFilters {
   user_id?: string;
   status?: AdvisoryRequestStatus;

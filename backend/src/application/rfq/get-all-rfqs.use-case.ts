@@ -1,10 +1,13 @@
-import { Injectable, ForbiddenException } from "@nestjs/common";
-import { RFQRepository } from "../../domain/rfq/rfq.port";
+import { Injectable, ForbiddenException, Inject } from "@nestjs/common";
+import { RFQRepository, RFQ_REPOSITORY } from "../../domain/rfq/rfq.port";
 import { RFQ, RFQStatus } from "../../domain/rfq/rfq.entity";
 
 @Injectable()
 export class GetAllRFQsUseCase {
-  constructor(private readonly rfqRepository: RFQRepository) {}
+  constructor(
+    @Inject(RFQ_REPOSITORY)
+    private readonly rfqRepository: RFQRepository
+  ) {}
 
   async execute(userRole: string, status?: RFQStatus): Promise<RFQ[]> {
     // Only agents and admins can view all RFQs

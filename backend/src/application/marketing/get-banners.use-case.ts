@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { MarketingBannerRepositoryPort, MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 import { MarketingBanner } from "../../domain/marketing/banner.entity";
 
 /**
@@ -9,6 +9,7 @@ import { MarketingBanner } from "../../domain/marketing/banner.entity";
 @Injectable()
 export class GetBannersUseCase {
   constructor(
+    @Inject(MARKETING_BANNER_REPOSITORY)
     private readonly bannerRepository: MarketingBannerRepositoryPort,
   ) {}
 

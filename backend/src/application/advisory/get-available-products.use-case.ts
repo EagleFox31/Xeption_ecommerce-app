@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, Inject } from "@nestjs/common";
 import {
   ProductRepositoryPort,
   ProductListOptions,
+  PRODUCT_REPOSITORY
 } from "../../domain/catalog/product.port";
 import { Product } from "../../domain/catalog/product.entity";
 import {
@@ -29,7 +30,10 @@ export interface ProductRecommendationResult {
 
 @Injectable()
 export class GetAvailableProductsUseCase {
-  constructor(private readonly productRepository: ProductRepositoryPort) {}
+  constructor(
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepositoryPort
+  ) {}
 
   async execute(
     budget: AdvisoryBudget,

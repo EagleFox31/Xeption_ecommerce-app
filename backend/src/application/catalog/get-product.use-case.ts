@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Inject } from "@nestjs/common";
 import { Product } from "../../domain/catalog/product.entity";
-import { ProductRepositoryPort } from "../../domain/catalog/product.port";
+import { ProductRepositoryPort, PRODUCT_REPOSITORY } from "../../domain/catalog/product.port";
 
 @Injectable()
 export class GetProductUseCase {
-  constructor(private readonly productRepository: ProductRepositoryPort) {}
+  constructor(
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepositoryPort
+  ) {}
 
   async execute(productId: string): Promise<Product> {
     if (!productId || productId.trim() === "") {

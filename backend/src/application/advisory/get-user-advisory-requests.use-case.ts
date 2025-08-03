@@ -1,13 +1,17 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, Inject } from "@nestjs/common";
 import {
   AdvisoryRepositoryPort,
   AdvisoryRequestListOptions,
   AdvisoryRequestListResult,
+  ADVISORY_REPOSITORY
 } from "../../domain/advisory/advisory.port";
 
 @Injectable()
 export class GetUserAdvisoryRequestsUseCase {
-  constructor(private readonly advisoryRepository: AdvisoryRepositoryPort) {}
+  constructor(
+    @Inject(ADVISORY_REPOSITORY)
+    private readonly advisoryRepository: AdvisoryRepositoryPort
+  ) {}
 
   async execute(
     userId: string,

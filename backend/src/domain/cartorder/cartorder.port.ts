@@ -14,6 +14,7 @@ import {
   Payment,
   CreatePaymentRequest,
   ProcessPaymentRequest,
+  PaymentStatus
 } from "./payment.entity";
 
 export interface CartOrderRepository {
@@ -33,6 +34,7 @@ export interface CartOrderRepository {
   getOrdersByUserId(userId: string): Promise<Order[]>;
   updateOrderStatus(request: UpdateOrderStatusRequest): Promise<Order>;
   deleteOrder(orderId: string): Promise<void>;
+  getOrderInvoice(orderId: string): Promise<any>; // For detailed invoice data
 
   // Payment operations
   createPayment(request: CreatePaymentRequest): Promise<Payment>;

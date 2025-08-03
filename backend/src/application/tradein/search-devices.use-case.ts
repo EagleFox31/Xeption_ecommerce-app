@@ -1,10 +1,13 @@
-import { Injectable } from "@nestjs/common";
-import { TradeInRepositoryPort } from "../../domain/tradein/tradein.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { TradeInRepositoryPort, TRADEIN_REPOSITORY } from "../../domain/tradein/tradein.port";
 import { Device } from "../../domain/tradein/tradein.entity";
 
 @Injectable()
 export class SearchDevicesUseCase {
-  constructor(private readonly tradeInRepository: TradeInRepositoryPort) {}
+  constructor(
+    @Inject(TRADEIN_REPOSITORY)
+    private readonly tradeInRepository: TradeInRepositoryPort
+  ) {}
 
   async execute(query: string, category?: string): Promise<Device[]> {
     if (!query || query.trim().length < 2) {

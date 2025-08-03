@@ -3,10 +3,12 @@
  * Gère la logique métier de création avec validation
  */
 
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import {
   BackorderRepository,
   ProductStockService,
+  BACKORDER_REPOSITORY,
+  PRODUCT_STOCK_SERVICE
 } from "../../domain/backorder/backorder.port";
 import {
   BackorderRequest,
@@ -31,7 +33,9 @@ export interface CreateBackorderRequestInput {
 @Injectable()
 export class CreateBackorderRequestUseCase {
   constructor(
+    @Inject(BACKORDER_REPOSITORY)
     private readonly backorderRepository: BackorderRepository,
+    @Inject(PRODUCT_STOCK_SERVICE)
     private readonly productStockService: ProductStockService,
   ) {}
 

@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { RepairRepository } from "../../domain/repair/repair.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { REPAIR_REPOSITORY, RepairRepositoryPort } from "../../domain/repair/repair.port";
 import {
   Technician,
   TechnicianSpecialty,
@@ -13,7 +13,10 @@ export interface GetAvailableTechniciansQuery {
 
 @Injectable()
 export class GetAvailableTechniciansUseCase {
-  constructor(private readonly repairRepository: RepairRepository) {}
+  constructor(
+    @Inject(REPAIR_REPOSITORY)
+    private readonly repairRepository: RepairRepositoryPort
+  ) {}
 
   async execute(query: GetAvailableTechniciansQuery): Promise<Technician[]> {
     // Validation des paramètres d'entrée

@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { TradeInRepositoryPort } from "../../domain/tradein/tradein.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { TradeInRepositoryPort, TRADEIN_REPOSITORY } from "../../domain/tradein/tradein.port";
 import {
   TradeInRequest,
   DeviceCondition,
@@ -8,7 +8,10 @@ import {
 
 @Injectable()
 export class EvaluateTradeInUseCase {
-  constructor(private readonly tradeInRepository: TradeInRepositoryPort) {}
+  constructor(
+    @Inject(TRADEIN_REPOSITORY)
+    private readonly tradeInRepository: TradeInRepositoryPort
+  ) {}
 
   async execute(
     requestId: string,

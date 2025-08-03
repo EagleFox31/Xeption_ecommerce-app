@@ -6,6 +6,8 @@ import {
   UpdateUserDto,
 } from "./user.entity";
 
+export const USER_REPOSITORY = 'USER_REPOSITORY';
+
 export interface UserRepositoryPort {
   // User management
   getUserById(userId: string): Promise<User | null>;

@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Mail, Lock, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login } from "@/services/auth";
+import { useAuthContext } from "@/context/AuthContext";
 
 const formSchema = z.object({
   email: z.string().email("Adresse e-mail invalide"),
@@ -30,9 +29,12 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const LoginForm = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { login, isLoading, error } = useAuthContext();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Get the redirect path from location state or default to account page
+  const from = location.state?.from?.pathname || "/account";
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -44,34 +46,30 @@ const LoginForm = () => {
   });
 
   const onSubmit = async (data: FormValues) => {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      // Use the login service function
-      const user = await login(data.email, data.password);
+      // Use the login method from AuthContext
+      await login(data.email, data.password);
 
       // Store remember me preference if checked
       if (data.rememberMe) {
         localStorage.setItem("xeption_remember_me", "true");
       }
 
-      // Redirect based on user type
-      if (user.isBusinessClient) {
-        // Redirect business clients to business dashboard
-        navigate("/business/dashboard");
-      } else {
-        // Redirect regular users to account page
-        navigate("/account");
+      // Navigate will happen automatically via AuthContext
+      // But we can override it based on user type if needed
+      const userData = localStorage.getItem("xeption_user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.isBusinessClient) {
+          navigate("/business/dashboard");
+        } else {
+          // Navigate to the page they were trying to access or account page
+          navigate(from, { replace: true });
+        }
       }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Une erreur est survenue. Veuillez réessayer.",
-      );
-    } finally {
-      setIsLoading(false);
+      // Error handling is managed by AuthContext
+      console.error("Login failed:", err);
     }
   };
 
@@ -88,7 +86,11 @@ const LoginForm = () => {
           className="mb-6 bg-red-900/50 border-red-800 text-white"
         >
           <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription>
+            {error.response?.data?.message ||
+             error.message ||
+             "Une erreur est survenue. Veuillez réessayer."}
+          </AlertDescription>
         </Alert>
       )}
 

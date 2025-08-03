@@ -9,11 +9,16 @@ import {
   UseGuards,
   HttpStatus,
   HttpCode,
+  Res,
+  StreamableFile,
+  Query,
 } from "@nestjs/common";
+import { Response } from "express";
 import { AuthGuard } from "../../common/auth/auth.guard";
 import { CurrentUser } from "../../common/auth/current-user.decorator";
 import { JwtPayload } from "../../common/auth/jwt.types";
 import { CartOrderService } from "./cartorder.service";
+import { InvoiceService } from "./invoice.service";
 import {
   CreateCartDto,
   AddCartItemDto,
@@ -23,12 +28,27 @@ import {
 import { CreateOrderDto, UpdateOrderStatusDto } from "./dto/order.dto";
 import { CreatePaymentDto, ProcessPaymentDto } from "./dto/payment.dto";
 
+/**
+ * CartOrder API Controller
+ *
+ * Restructured to clearly separate:
+ * 1. Cart operations (/cart/*)
+ * 2. Checkout operations (/checkout/*)
+ * 3. Order management (/orders/*)
+ * 4. Payment processing (/payments/*)
+ */
 @Controller("api/cartorder")
 @UseGuards(AuthGuard)
 export class CartOrderController {
-  constructor(private readonly cartOrderService: CartOrderService) {}
+  constructor(
+    private readonly cartOrderService: CartOrderService,
+    private readonly invoiceService: InvoiceService
+  ) {}
 
-  // Cart endpoints
+  /**
+   * CART OPERATIONS
+   * Endpoints for managing the shopping cart
+   */
   @Post("cart")
   @HttpCode(HttpStatus.CREATED)
   async createCart(
@@ -51,6 +71,33 @@ export class CartOrderController {
     return this.cartOrderService.getCartById(cartId);
   }
 
+  /**
+   * Add a single item to the cart
+   * This endpoint allows adding one item at a time
+   */
+  @Post("cart/items")
+  @HttpCode(HttpStatus.CREATED)
+  async addSingleCartItem(
+    @CurrentUser() user: JwtPayload,
+    @Body() addCartItemDto: AddCartItemDto,
+  ) {
+    // First get the user's cart
+    const cart = await this.cartOrderService.getCartByUserId(user.sub);
+    if (!cart) {
+      // Create a cart if it doesn't exist
+      await this.cartOrderService.createCart({ userId: user.sub });
+    }
+
+    // Add item to the cart
+    return this.cartOrderService.addCartItem({
+      cartId: user.sub, // Using userId as cartId since it's a 1:1 relationship
+      ...addCartItemDto,
+    });
+  }
+
+  /**
+   * Legacy endpoint - Add items to a specific cart
+   */
   @Post("cart/:cartId/items")
   @HttpCode(HttpStatus.CREATED)
   async addCartItem(
@@ -97,7 +144,33 @@ export class CartOrderController {
     return this.cartOrderService.deleteCart(cartId);
   }
 
-  // Order endpoints
+  /**
+   * CHECKOUT OPERATIONS
+   * Endpoints for the checkout process (converting cart to order)
+   */
+  @Post("checkout")
+  @HttpCode(HttpStatus.CREATED)
+  async checkout(
+    @CurrentUser() user: JwtPayload,
+    @Body() createOrderDto: CreateOrderDto,
+  ) {
+    // If cartId is not provided, use user's ID as cart ID
+    const cartId = createOrderDto.cartId || user.sub;
+    
+    return this.cartOrderService.createOrder({
+      userId: user.sub,
+      cartId: cartId,
+      shippingAddress: createOrderDto.shippingAddress,
+      billingAddress: createOrderDto.billingAddress,
+      notes: createOrderDto.notes,
+    });
+  }
+
+  /**
+   * ORDER MANAGEMENT
+   * Endpoints for managing orders
+   */
+  // Legacy endpoint - retained for backward compatibility
   @Post("orders")
   @HttpCode(HttpStatus.CREATED)
   async createOrder(
@@ -120,6 +193,44 @@ export class CartOrderController {
     return this.cartOrderService.getOrderById(orderId);
   }
 
+  /**
+   * Get detailed invoice data for an order
+   * Supports both JSON and PDF formats based on query parameter
+   * Usage:
+   * - /api/cartorder/orders/:orderId/invoice - Returns JSON data
+   * - /api/cartorder/orders/:orderId/invoice?format=pdf - Returns PDF file
+   */
+  @Get("orders/:orderId/invoice")
+  async getOrderInvoice(
+    @Param("orderId") orderId: string,
+    @Query("format") format?: string,
+    @Res({ passthrough: true }) res?: Response
+  ) {
+    // Get invoice data from the service
+    const invoiceData = await this.cartOrderService.getOrderInvoice(orderId);
+    
+    // Process with the invoice service
+    const enhancedInvoiceData = this.invoiceService.generateInvoiceData(invoiceData);
+    
+    // Return PDF if requested
+    if (format === 'pdf') {
+      const pdfBuffer = await this.invoiceService.generatePdf(enhancedInvoiceData);
+      
+      // Set appropriate headers for PDF download
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="invoice-${invoiceData.invoiceNumber}.pdf"`,
+        'Content-Length': pdfBuffer.length,
+      });
+      
+      // Return the PDF as a streamable file
+      return new StreamableFile(pdfBuffer);
+    }
+    
+    // Default: return JSON data
+    return enhancedInvoiceData;
+  }
+
   @Put("orders/:orderId/status")
   async updateOrderStatus(
     @Param("orderId") orderId: string,
@@ -137,7 +248,10 @@ export class CartOrderController {
     return this.cartOrderService.deleteOrder(orderId);
   }
 
-  // Payment endpoints
+  /**
+   * PAYMENT OPERATIONS
+   * Endpoints for payment processing
+   */
   @Post("payments")
   @HttpCode(HttpStatus.CREATED)
   async createPayment(

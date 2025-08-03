@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 import { UsersController } from "../../modules/users/users.controller";
 import { GetUserProfileUseCase } from "../../application/users/get-user-profile.use-case";
 import { UpdateUserProfileUseCase } from "../../application/users/update-user-profile.use-case";
@@ -9,6 +10,8 @@ import { DeleteUserAddressUseCase } from "../../application/users/delete-user-ad
 import { SetDefaultAddressUseCase } from "../../application/users/set-default-address.use-case";
 import { User, UserAddress, AddressType } from "../../domain/users/user.entity";
 import { AuthenticatedUser } from "../../common/auth/jwt.types";
+import { AuthGuard } from "../../common/auth/auth.guard";
+import { createMockConfigService, MockAuthGuard } from "../test-utils";
 
 describe("UsersController", () => {
   let controller: UsersController;
@@ -88,8 +91,30 @@ describe("UsersController", () => {
           provide: SetDefaultAddressUseCase,
           useValue: { execute: jest.fn() },
         },
+        {
+          provide: ConfigService,
+          useFactory: createMockConfigService,
+        },
+        {
+          provide: 'UserRepositoryPort',
+          useValue: {
+            getUserById: jest.fn(),
+            updateUser: jest.fn(),
+            validateUserExists: jest.fn(),
+            getUserAddresses: jest.fn(),
+            getAddressById: jest.fn(),
+            createAddress: jest.fn(),
+            updateAddress: jest.fn(),
+            deleteAddress: jest.fn(),
+            setDefaultAddress: jest.fn(),
+            getDefaultAddress: jest.fn(),
+          },
+        },
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useClass(MockAuthGuard)
+    .compile();
 
     controller = module.get<UsersController>(UsersController);
     getUserProfileUseCase = module.get<GetUserProfileUseCase>(

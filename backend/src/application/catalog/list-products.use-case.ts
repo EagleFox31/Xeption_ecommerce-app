@@ -1,15 +1,19 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { Product } from "../../domain/catalog/product.entity";
 import {
   ProductRepositoryPort,
   ProductListOptions,
   ProductListResult,
   ProductFilters,
+  PRODUCT_REPOSITORY,
 } from "../../domain/catalog/product.port";
 
 @Injectable()
 export class ListProductsUseCase {
-  constructor(private readonly productRepository: ProductRepositoryPort) {}
+  constructor(
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: ProductRepositoryPort
+  ) {}
 
   async execute(options: ProductListOptions = {}): Promise<ProductListResult> {
     // Set default values

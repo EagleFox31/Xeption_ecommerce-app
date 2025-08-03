@@ -85,6 +85,14 @@ start: build
 	@echo "🚀 Démarrage en mode production..."
 	npm run start:prod
 
+deploy-prod:
+	@echo "🚀 Déploiement en production..."
+	npm run deploy:prod
+
+deploy-staging:
+	@echo "🚀 Déploiement en staging..."
+	npm run deploy:staging
+
 # 🧪 Tests
 test:
 	@echo "🧪 Exécution des tests unitaires..."

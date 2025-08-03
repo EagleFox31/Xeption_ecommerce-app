@@ -13,6 +13,8 @@ import {
   HttpCode,
 } from "@nestjs/common";
 import { AuthGuard } from "../../common/auth/auth.guard";
+import { RoleGuard } from "../../common/auth/role.guard";
+import { Roles } from "../../common/auth/roles.decorator";
 import { CurrentUser } from "../../common/auth/current-user.decorator";
 import { AuthenticatedUser } from "../../common/auth/jwt.types";
 import { MarketingService } from "./marketing.service";
@@ -60,7 +62,8 @@ export class MarketingController {
    * GET /marketing/admin/banners
    */
   @Get("admin/banners")
-  @UseGuards(AuthGuard)
+  @Roles('admin')
+  @UseGuards(AuthGuard, RoleGuard)
   @HttpCode(HttpStatus.OK)
   async getAllBanners(): Promise<MarketingBannerResponseDto[]> {
     const banners = await this.marketingService.getAllBanners();
@@ -72,7 +75,8 @@ export class MarketingController {
    * GET /marketing/admin/banners/:id
    */
   @Get("admin/banners/:id")
-  @UseGuards(AuthGuard)
+  @Roles('admin')
+  @UseGuards(AuthGuard, RoleGuard)
   @HttpCode(HttpStatus.OK)
   async getBannerById(
     @Param("id") id: string,
@@ -86,7 +90,8 @@ export class MarketingController {
    * POST /marketing/admin/banners
    */
   @Post("admin/banners")
-  @UseGuards(AuthGuard)
+  @Roles('admin')
+  @UseGuards(AuthGuard, RoleGuard)
   @HttpCode(HttpStatus.CREATED)
   async createBanner(
     @Body() createBannerDto: CreateMarketingBannerDto,
@@ -108,7 +113,8 @@ export class MarketingController {
    * PUT /marketing/admin/banners/:id
    */
   @Put("admin/banners/:id")
-  @UseGuards(AuthGuard)
+  @Roles('admin')
+  @UseGuards(AuthGuard, RoleGuard)
   @HttpCode(HttpStatus.OK)
   async updateBanner(
     @Param("id") id: string,
@@ -133,7 +139,8 @@ export class MarketingController {
    * PATCH /marketing/admin/banners/:id/status
    */
   @Patch("admin/banners/:id/status")
-  @UseGuards(AuthGuard)
+  @Roles('admin')
+  @UseGuards(AuthGuard, RoleGuard)
   @HttpCode(HttpStatus.OK)
   async toggleBannerStatus(
     @Param("id") id: string,
@@ -151,7 +158,8 @@ export class MarketingController {
    * DELETE /marketing/admin/banners/:id
    */
   @Delete("admin/banners/:id")
-  @UseGuards(AuthGuard)
+  @Roles('admin')
+  @UseGuards(AuthGuard, RoleGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async deleteBanner(@Param("id") id: string): Promise<void> {
     await this.marketingService.deleteBanner(id);

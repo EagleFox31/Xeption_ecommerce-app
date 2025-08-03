@@ -4,7 +4,7 @@
 
 import { Test, TestingModule } from "@nestjs/testing";
 import { CalculateDeliveryFeeUseCase } from "../../application/delivery/calculate-delivery-fee.use-case";
-import { DeliveryRepositoryPort } from "../../domain/delivery/delivery.port";
+import { DeliveryRepositoryPort, DELIVERY_REPOSITORY } from "../../domain/delivery/delivery.port";
 import {
   DeliveryRequest,
   DeliveryZone,
@@ -29,7 +29,7 @@ describe("CalculateDeliveryFeeUseCase", () => {
       providers: [
         CalculateDeliveryFeeUseCase,
         {
-          provide: DeliveryRepositoryPort,
+          provide: DELIVERY_REPOSITORY,
           useValue: mockDeliveryRepository,
         },
       ],
@@ -38,7 +38,7 @@ describe("CalculateDeliveryFeeUseCase", () => {
     useCase = module.get<CalculateDeliveryFeeUseCase>(
       CalculateDeliveryFeeUseCase,
     );
-    deliveryRepository = module.get(DeliveryRepositoryPort);
+    deliveryRepository = module.get(DELIVERY_REPOSITORY);
   });
 
   afterEach(() => {

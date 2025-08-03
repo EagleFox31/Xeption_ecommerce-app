@@ -1,5 +1,5 @@
 import AccountLayout from "@/components/account/AccountLayout";
-import OrderHistory from "@/components/account/OrderHistory";
+import OrderHistory from "@/components/orders/OrderHistory";
 
 const OrdersPage = () => {
   return (

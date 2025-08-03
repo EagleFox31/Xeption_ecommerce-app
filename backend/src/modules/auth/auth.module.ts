@@ -4,10 +4,12 @@ import { AuthService } from "./auth.service";
 import { AuthGuard } from "../../common/auth/auth.guard";
 import { GetUserProfileUseCase } from "../../application/auth/get-user-profile.use-case";
 import { ValidateUserUseCase } from "../../application/auth/validate-user.use-case";
-import { AuthRepository } from "../../infrastructure/supabase/repositories/auth.repository";
-import { AuthRepositoryPort } from "../../domain/auth/auth.port";
+import { PrismaAuthRepository } from "../../infrastructure/prisma/repositories/auth.repository";
+import { AUTH_REPOSITORY } from "../../domain/auth/auth.port";
+import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 
 @Module({
+  imports: [PrismaModule],
   controllers: [AuthController],
   providers: [
     AuthService,
@@ -15,8 +17,8 @@ import { AuthRepositoryPort } from "../../domain/auth/auth.port";
     GetUserProfileUseCase,
     ValidateUserUseCase,
     {
-      provide: AuthRepositoryPort,
-      useClass: AuthRepository,
+      provide: AUTH_REPOSITORY,
+      useClass: PrismaAuthRepository,
     },
   ],
   exports: [AuthGuard, AuthService],

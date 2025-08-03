@@ -3,8 +3,8 @@
  * Logique métier pure, injectable et testable
  */
 
-import { Injectable } from "@nestjs/common";
-import { DeliveryRepositoryPort } from "../../domain/delivery/delivery.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { DeliveryRepositoryPort, DELIVERY_REPOSITORY } from "../../domain/delivery/delivery.port";
 import {
   DeliveryRequest,
   DeliveryCalculation,
@@ -12,7 +12,10 @@ import {
 
 @Injectable()
 export class CalculateDeliveryFeeUseCase {
-  constructor(private readonly deliveryRepository: DeliveryRepositoryPort) {}
+  constructor(
+    @Inject(DELIVERY_REPOSITORY)
+    private readonly deliveryRepository: DeliveryRepositoryPort
+  ) {}
 
   async execute(request: DeliveryRequest): Promise<DeliveryCalculation> {
     // Validation des données d'entrée

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { GetBannersUseCase } from "../../application/marketing/get-banners.use-case";
-import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.port";
+import { MarketingBannerRepositoryPort, MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 import { MarketingBanner } from "../../domain/marketing/banner.entity";
 
 describe("GetBannersUseCase", () => {
@@ -23,7 +23,7 @@ describe("GetBannersUseCase", () => {
       providers: [
         GetBannersUseCase,
         {
-          provide: MarketingBannerRepositoryPort,
+          provide: MARKETING_BANNER_REPOSITORY,
           useValue: mockRepository,
         },
       ],
@@ -31,7 +31,7 @@ describe("GetBannersUseCase", () => {
 
     useCase = module.get<GetBannersUseCase>(GetBannersUseCase);
     repository = module.get<MarketingBannerRepositoryPort>(
-      MarketingBannerRepositoryPort,
+      MARKETING_BANNER_REPOSITORY,
     );
   });
 

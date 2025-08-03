@@ -7,6 +7,8 @@ import { CreateBackorderRequestUseCase } from "../../application/backorder/creat
 import {
   BackorderRepository,
   ProductStockService,
+  BACKORDER_REPOSITORY,
+  PRODUCT_STOCK_SERVICE
 } from "../../domain/backorder/backorder.port";
 import {
   BackorderStatus,
@@ -62,11 +64,11 @@ describe("CreateBackorderRequestUseCase", () => {
       providers: [
         CreateBackorderRequestUseCase,
         {
-          provide: BackorderRepository,
+          provide: BACKORDER_REPOSITORY,
           useValue: mockRepository,
         },
         {
-          provide: ProductStockService,
+          provide: PRODUCT_STOCK_SERVICE,
           useValue: mockStockService,
         },
       ],
@@ -75,8 +77,8 @@ describe("CreateBackorderRequestUseCase", () => {
     useCase = module.get<CreateBackorderRequestUseCase>(
       CreateBackorderRequestUseCase,
     );
-    mockBackorderRepository = module.get(BackorderRepository);
-    mockProductStockService = module.get(ProductStockService);
+    mockBackorderRepository = module.get(BACKORDER_REPOSITORY);
+    mockProductStockService = module.get(PRODUCT_STOCK_SERVICE);
   });
 
   describe("execute", () => {

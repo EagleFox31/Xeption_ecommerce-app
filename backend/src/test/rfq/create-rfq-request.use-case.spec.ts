@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { CreateRFQRequestUseCase } from "../../application/rfq/create-rfq-request.use-case";
-import { RFQRepository } from "../../domain/rfq/rfq.port";
+import { RFQRepository, RFQ_REPOSITORY } from "../../domain/rfq/rfq.port";
 import { RFQStatus } from "../../domain/rfq/rfq.entity";
 
 describe("CreateRFQRequestUseCase", () => {
@@ -30,14 +30,14 @@ describe("CreateRFQRequestUseCase", () => {
       providers: [
         CreateRFQRequestUseCase,
         {
-          provide: RFQRepository,
+          provide: RFQ_REPOSITORY,
           useValue: mockRepository,
         },
       ],
     }).compile();
 
     useCase = module.get<CreateRFQRequestUseCase>(CreateRFQRequestUseCase);
-    repository = module.get<RFQRepository>(RFQRepository);
+    repository = module.get<RFQRepository>(RFQ_REPOSITORY);
   });
 
   it("should be defined", () => {

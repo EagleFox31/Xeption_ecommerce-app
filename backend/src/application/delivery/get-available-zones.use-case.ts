@@ -2,13 +2,16 @@
  * Use case pour récupérer les zones de livraison disponibles
  */
 
-import { Injectable } from "@nestjs/common";
-import { DeliveryRepositoryPort } from "../../domain/delivery/delivery.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { DeliveryRepositoryPort, DELIVERY_REPOSITORY } from "../../domain/delivery/delivery.port";
 import { DeliveryZone } from "../../domain/delivery/delivery.entity";
 
 @Injectable()
 export class GetAvailableZonesUseCase {
-  constructor(private readonly deliveryRepository: DeliveryRepositoryPort) {}
+  constructor(
+    @Inject(DELIVERY_REPOSITORY)
+    private readonly deliveryRepository: DeliveryRepositoryPort
+  ) {}
 
   async execute(): Promise<DeliveryZone[]> {
     return await this.deliveryRepository.findActiveZones();

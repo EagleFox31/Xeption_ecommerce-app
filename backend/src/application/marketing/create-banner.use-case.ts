@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
-import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.port";
+import { Injectable, BadRequestException, Inject } from "@nestjs/common";
+import { MarketingBannerRepositoryPort, MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 import { MarketingBanner } from "../../domain/marketing/banner.entity";
 
 export interface CreateBannerRequest {
@@ -22,6 +22,7 @@ export interface CreateBannerRequest {
 @Injectable()
 export class CreateBannerUseCase {
   constructor(
+    @Inject(MARKETING_BANNER_REPOSITORY)
     private readonly bannerRepository: MarketingBannerRepositoryPort,
   ) {}
 
@@ -42,11 +43,11 @@ export class CreateBannerUseCase {
       throw new BadRequestException("Priority must be a positive number");
     }
 
-    // Create banner entity
+    // Create banner data with timestamps
     const bannerData = {
       ...request,
       created_at: new Date(),
-      updated_at: new Date(),
+      updated_at: new Date()
     };
 
     return await this.bannerRepository.createBanner(bannerData);

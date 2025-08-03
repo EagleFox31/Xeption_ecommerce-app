@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { RFQRepository } from "../../domain/rfq/rfq.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { RFQRepository, RFQ_REPOSITORY } from "../../domain/rfq/rfq.port";
 import { RFQRequest, RFQItem, RFQStatus } from "../../domain/rfq/rfq.entity";
 
 export interface CreateRFQRequestCommand {
@@ -21,7 +21,10 @@ export interface CreateRFQRequestCommand {
 
 @Injectable()
 export class CreateRFQRequestUseCase {
-  constructor(private readonly rfqRepository: RFQRepository) {}
+  constructor(
+    @Inject(RFQ_REPOSITORY)
+    private readonly rfqRepository: RFQRepository
+  ) {}
 
   async execute(command: CreateRFQRequestCommand): Promise<RFQRequest> {
     // Create the RFQ request

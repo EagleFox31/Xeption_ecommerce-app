@@ -33,6 +33,10 @@ import {
   verifyPayment,
   generateTransactionId,
 } from "@/services/paymentService";
+import { useCart } from "@/hooks/useCart";
+import { useOrder } from "@/hooks/useOrder";
+import { useAuth } from "@/hooks/useAuth";
+import { OrderRequest } from "@/services/orderApiService";
 
 interface CheckoutProps {
   cartItems?: {
@@ -113,13 +117,16 @@ export default function CheckoutPage({
 }: CheckoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { cart, isLoading: isCartLoading } = useCart();
+  const { user, isAuthenticated } = useAuth();
+  const { checkout, isCheckingOut, checkoutError } = useOrder();
+  
   const [currentStep, setCurrentStep] = useState<
     "delivery" | "payment" | "confirmation"
   >("delivery");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("card");
   const [orderData, setOrderData] = useState<OrderData | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [orderSuccess, setOrderSuccess] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
@@ -157,37 +164,9 @@ export default function CheckoutPage({
     setSelectedPaymentMethod(watchPaymentMethod);
   }, [watchPaymentMethod]);
 
-  // Sample cart items if not provided through props or location state
-  const defaultCartItems = [
-    {
-      id: "1",
-      name: "MacBook Pro M2",
-      price: 1299000,
-      quantity: 1,
-      image:
-        "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500&q=80",
-    },
-    {
-      id: "2",
-      name: "iPhone 15 Pro",
-      price: 599000,
-      quantity: 2,
-      image:
-        "https://images.unsplash.com/photo-1592286927505-1def25115558?w=500&q=80",
-    },
-    {
-      id: "3",
-      name: "AirPods Pro",
-      price: 129000,
-      quantity: 1,
-      image:
-        "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=500&q=80",
-    },
-  ];
-
-  // Get cart items from location state if available
+  // Get cart items from cart hook or fallback to props/location state
   const locationCartItems = location.state?.cartItems;
-  const cartItems = propCartItems || locationCartItems || defaultCartItems;
+  const cartItems = cart?.items || propCartItems || locationCartItems || [];
 
   const { userLocation, calculateDeliveryCost, calculateTax } =
     useContext(LocationContext);
@@ -234,43 +213,55 @@ export default function CheckoutPage({
   };
 
   const handleDeliverySubmit = (data: DeliveryFormValues) => {
-    setIsSubmitting(true);
-    // Simulate processing
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setCurrentStep("payment");
-    }, 500);
+    // Proceed to payment step
+    setCurrentStep("payment");
   };
 
   const handlePaymentSubmit = async (data: PaymentFormValues) => {
-    setIsSubmitting(true);
+    // Create payment details based on the selected method
+    const paymentDetails: any = {};
+    
+    if (data.paymentMethod === "card" && data.cardNumber) {
+      paymentDetails.cardNumber = data.cardNumber;
+      paymentDetails.cardExpiry = data.cardExpiry;
+      paymentDetails.cardCvv = data.cardCvv;
+    } else if (data.paymentMethod === "mobile" && data.mobileNumber) {
+      paymentDetails.mobileNumber = data.mobileNumber;
+    }
 
-    // Create order data
-    const orderId = generateOrderId();
+    // Generate transaction ID for payment tracking
     const txnId = generateTransactionId();
     setTransactionId(txnId);
 
-    const newOrderData: OrderData = {
-      orderId: orderId,
-      items: cartItems,
-      subtotal: subtotal,
-      tax: tax,
-      deliveryCost: deliveryCost,
-      total: total,
-      deliveryMethod: deliveryForm.getValues().deliveryMethod,
-      paymentMethod: data.paymentMethod,
-      paymentStatus: "pending",
-      transactionId: txnId,
-      customerDetails: {
-        name: deliveryForm.getValues().name,
-        email: "customer@example.com", // Would come from user account in a real app
-        phone: deliveryForm.getValues().phone,
-        address: deliveryForm.getValues().address || "Store Pickup",
-      },
-      date: new Date().toISOString(),
+    // Create delivery address object
+    const deliveryData = deliveryForm.getValues();
+    const deliveryAddress = {
+      name: deliveryData.name,
+      address: deliveryData.deliveryMethod === "pickup" ? "Store Pickup" : deliveryData.address || "",
+      city: userLocation || "Douala",
+      state: "",
+      country: "Cameroon",
+      postalCode: "",
+      phone: deliveryData.phone,
     };
 
-    // For mobile money payments, process through payment gateway
+    // Create checkout request
+    const checkoutData: OrderRequest = {
+      cartId: cart?.id || "",
+      deliveryAddress: deliveryAddress,
+      deliveryMethod: {
+        type: deliveryData.deliveryMethod as any,
+        cost: deliveryCost,
+        estimatedDeliveryDays: deliveryData.deliveryMethod === "express" ? "1-2" : "3-5",
+      },
+      paymentMethod: {
+        type: data.paymentMethod as any,
+        details: paymentDetails,
+      },
+      transactionId: txnId,
+    };
+
+    // For mobile money payments, process through payment gateway first
     if (data.paymentMethod === "mobile") {
       setPaymentProcessing(true);
       setPaymentStatus("processing");
@@ -280,77 +271,102 @@ export default function CheckoutPage({
           amount: total,
           currency: "XAF",
           transactionId: txnId,
-          customerName: deliveryForm.getValues().name,
-          customerEmail: "customer@example.com", // Would come from user account
-          customerPhone: data.mobileNumber || deliveryForm.getValues().phone,
+          customerName: deliveryData.name,
+          customerEmail: user?.email || "guest@example.com",
+          customerPhone: data.mobileNumber || deliveryData.phone,
           paymentMethod: "MOBILE_MONEY",
-          description: `Payment for order ${orderId}`,
+          description: `Payment for order from Xeption`,
         });
 
-        if (paymentResult.status === "success") {
-          newOrderData.paymentStatus = "completed";
-          setPaymentStatus("success");
-          setOrderSuccess(true);
-        } else if (paymentResult.status === "pending") {
-          newOrderData.paymentStatus = "pending";
-          setPaymentStatus("pending");
-          // We'll still consider this a success for now, but will need to verify later
-          setOrderSuccess(true);
+        if (paymentResult.status === "success" || paymentResult.status === "pending") {
+          // If payment was initiated successfully, proceed with checkout
+          setPaymentStatus(paymentResult.status);
+          checkout(checkoutData, {
+            onSuccess: (order) => {
+              // Create OrderData object for the UI
+              const newOrderData: OrderData = {
+                orderId: order.id,
+                items: cartItems,
+                subtotal: subtotal,
+                tax: tax,
+                deliveryCost: deliveryCost,
+                total: total,
+                deliveryMethod: deliveryData.deliveryMethod,
+                paymentMethod: data.paymentMethod,
+                paymentStatus: paymentResult.status === "success" ? "completed" : "pending",
+                transactionId: txnId,
+                customerDetails: {
+                  name: deliveryData.name,
+                  email: user?.email || "guest@example.com",
+                  phone: deliveryData.phone,
+                  address: deliveryData.address || "Store Pickup",
+                },
+                date: new Date().toISOString(),
+              };
+              
+              setOrderData(newOrderData);
+              setOrderSuccess(true);
+              setCurrentStep("confirmation");
+              setPaymentProcessing(false);
+            },
+            onError: (error) => {
+              setOrderError(error.message || "Failed to create order");
+              setPaymentProcessing(false);
+              setPaymentStatus("error");
+            }
+          });
         } else {
           setPaymentStatus("error");
           setOrderError(paymentResult.message);
-          setIsSubmitting(false);
           setPaymentProcessing(false);
-          return;
         }
       } catch (error) {
         setPaymentStatus("error");
         setOrderError(
           error instanceof Error ? error.message : "Payment processing failed",
         );
-        setIsSubmitting(false);
         setPaymentProcessing(false);
-        return;
       }
     } else {
-      // For other payment methods, proceed as before
-      // For cash on delivery, we'll mark it as pending
-      if (data.paymentMethod === "cash") {
-        newOrderData.paymentStatus = "pending";
-      } else if (data.paymentMethod === "card") {
-        // Simulate card payment success
-        newOrderData.paymentStatus = "completed";
-      }
-
-      setOrderSuccess(true);
-    }
-
-    // Store the order
-    const orderSaved = storeOrder(newOrderData);
-
-    // Update state with order data
-    setOrderData(newOrderData);
-    setIsSubmitting(false);
-    setPaymentProcessing(false);
-
-    if (orderSaved) {
-      setCurrentStep("confirmation");
+      // For other payment methods, proceed directly with checkout
+      checkout(checkoutData, {
+        onSuccess: (order) => {
+          // Create OrderData object for the UI
+          const newOrderData: OrderData = {
+            orderId: order.id,
+            items: cartItems,
+            subtotal: subtotal,
+            tax: tax,
+            deliveryCost: deliveryCost,
+            total: total,
+            deliveryMethod: deliveryData.deliveryMethod,
+            paymentMethod: data.paymentMethod,
+            paymentStatus: data.paymentMethod === "cash" ? "pending" : "completed",
+            transactionId: txnId,
+            customerDetails: {
+              name: deliveryData.name,
+              email: user?.email || "guest@example.com",
+              phone: deliveryData.phone,
+              address: deliveryData.address || "Store Pickup",
+            },
+            date: new Date().toISOString(),
+          };
+          
+          setOrderData(newOrderData);
+          setOrderSuccess(true);
+          setCurrentStep("confirmation");
+        },
+        onError: (error) => {
+          setOrderError(error.message || "Failed to create order");
+        }
+      });
     }
   };
 
   const handleContinue = () => {
-    if (currentStep === "confirmation") {
-      if (orderSuccess) {
-        // Order completed successfully, navigate to a thank you page or back to home
-        navigate("/");
-      } else {
-        // Try again if there was an error
-        setOrderError(null);
-        paymentForm.handleSubmit(handlePaymentSubmit)();
-      }
-    } else if (currentStep === "payment") {
-      // This is now handled by the form submission
-      paymentForm.handleSubmit(handlePaymentSubmit)();
+    if (currentStep === "confirmation" && orderSuccess) {
+      // Order completed successfully, navigate to a thank you page or back to home
+      navigate("/");
     }
   };
 
@@ -537,9 +553,8 @@ export default function CheckoutPage({
                       <Button
                         type="submit"
                         className="w-full mt-6 bg-gold-500 hover:bg-gold-600 text-black font-bold"
-                        disabled={isSubmitting}
                       >
-                        {isSubmitting ? "Processing..." : "Continue to Payment"}
+                        Continue to Payment
                       </Button>
                     </form>
                   </Form>
@@ -724,9 +739,16 @@ export default function CheckoutPage({
                       <Button
                         type="submit"
                         className="w-full mt-6 bg-gold-500 hover:bg-gold-600 text-black font-bold"
-                        disabled={isSubmitting}
+                        disabled={isCheckingOut || paymentProcessing}
                       >
-                        {isSubmitting ? "Processing..." : "Complete Order"}
+                        {isCheckingOut || paymentProcessing ? (
+                          <div className="flex items-center">
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </div>
+                        ) : (
+                          "Complete Order"
+                        )}
                       </Button>
                     </form>
                   </Form>
@@ -870,40 +892,50 @@ export default function CheckoutPage({
                 <h2 className="text-xl font-bold mb-4 text-white">
                   Order Summary
                 </h2>
-                <div className="space-y-3">
-                  {cartItems.map((item) => (
-                    <div key={item.id} className="flex justify-between">
+                {isCartLoading ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-gold-500" />
+                  </div>
+                ) : cartItems.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    Your cart is empty
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {cartItems.map((item) => (
+                      <div key={item.id} className="flex justify-between">
+                        <span className="text-gray-400">
+                          {item.name} x {item.quantity}
+                        </span>
+                        <span className="text-white">
+                          {formatPrice(item.price * item.quantity)}
+                        </span>
+                      </div>
+                    ))}
+                    <Separator className="bg-gray-800 my-4" />
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Subtotal</span>
+                      <span className="text-white">{formatPrice(subtotal)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">Tax (19.25% VAT)</span>
+                      <span className="text-white">{formatPrice(tax)}</span>
+                    </div>
+                    <div className="flex justify-between">
                       <span className="text-gray-400">
-                        {item.name} x {item.quantity}
+                        Delivery to {userLocation}
                       </span>
                       <span className="text-white">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPrice(deliveryCost)}
                       </span>
                     </div>
-                  ))}
-                  <Separator className="bg-gray-800 my-4" />
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Subtotal</span>
-                    <span className="text-white">{formatPrice(subtotal)}</span>
+                    <Separator className="bg-gray-800 my-4" />
+                    <div className="flex justify-between font-bold">
+                      <span className="text-white">Total</span>
+                      <span className="text-gold-500">{formatPrice(total)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Tax (19.25% VAT)</span>
-                    <span className="text-white">{formatPrice(tax)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">
-                      Delivery to {userLocation}
-                    </span>
-                    <span className="text-white">
-                      {formatPrice(deliveryCost)}
-                    </span>
-                  </div>
-                  <Separator className="bg-gray-800 my-4" />
-                  <div className="flex justify-between font-bold">
-                    <span className="text-white">Total</span>
-                    <span className="text-gold-500">{formatPrice(total)}</span>
-                  </div>
-                </div>
+                )}
               </div>
             </Card>
           </div>

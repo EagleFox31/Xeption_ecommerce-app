@@ -1,9 +1,12 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { UserRepositoryPort } from "../../domain/users/user.port";
+import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { UserRepositoryPort, USER_REPOSITORY } from "../../domain/users/user.port";
 
 @Injectable()
 export class DeleteUserAddressUseCase {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepositoryPort
+  ) {}
 
   async execute(addressId: string, userId: string): Promise<void> {
     const address = await this.userRepository.getAddressById(addressId, userId);

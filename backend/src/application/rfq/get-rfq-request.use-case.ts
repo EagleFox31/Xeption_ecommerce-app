@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { RFQRepository } from "../../domain/rfq/rfq.port";
+import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { RFQRepository, RFQ_REPOSITORY } from "../../domain/rfq/rfq.port";
 import { RFQRequest, RFQItem } from "../../domain/rfq/rfq.entity";
 
 export interface RFQRequestWithItems extends RFQRequest {
@@ -8,7 +8,10 @@ export interface RFQRequestWithItems extends RFQRequest {
 
 @Injectable()
 export class GetRFQRequestUseCase {
-  constructor(private readonly rfqRepository: RFQRepository) {}
+  constructor(
+    @Inject(RFQ_REPOSITORY)
+    private readonly rfqRepository: RFQRepository
+  ) {}
 
   async execute(id: string, userId?: string): Promise<RFQRequestWithItems> {
     const rfqRequest = await this.rfqRepository.getRFQRequestById(id);

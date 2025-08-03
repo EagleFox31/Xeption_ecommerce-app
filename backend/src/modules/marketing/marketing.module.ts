@@ -15,7 +15,9 @@ import { ToggleBannerStatusUseCase } from "../../application/marketing/toggle-ba
 import { DeleteBannerUseCase } from "../../application/marketing/delete-banner.use-case";
 
 // Infrastructure
-import { SupabaseBannerRepository } from "../../infrastructure/supabase/repositories/banner.repository";
+import { PrismaMarketingBannerRepository } from "../../infrastructure/prisma/repositories/marketing-banner.repository";
+import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
+import { MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 
 /**
  * Marketing Module
@@ -23,6 +25,7 @@ import { SupabaseBannerRepository } from "../../infrastructure/supabase/reposito
  * Follows hexagonal architecture with clear separation of concerns
  */
 @Module({
+  imports: [PrismaModule],
   controllers: [MarketingController],
   providers: [
     // Service
@@ -38,11 +41,15 @@ import { SupabaseBannerRepository } from "../../infrastructure/supabase/reposito
     DeleteBannerUseCase,
 
     // Repository Implementation
+    PrismaMarketingBannerRepository, // Register the concrete implementation
     {
-      provide: MarketingBannerRepositoryPort,
-      useClass: SupabaseBannerRepository,
+      provide: MARKETING_BANNER_REPOSITORY,
+      useFactory: (repository: PrismaMarketingBannerRepository): MarketingBannerRepositoryPort => {
+        return repository;
+      },
+      inject: [PrismaMarketingBannerRepository],
     },
   ],
-  exports: [MarketingService, MarketingBannerRepositoryPort],
+  exports: [MarketingService, MARKETING_BANNER_REPOSITORY],
 })
 export class MarketingModule {}

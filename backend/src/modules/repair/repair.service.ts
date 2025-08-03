@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { CreateRepairRequestUseCase } from "../../application/repair/create-repair-request.use-case";
 import { ScheduleRepairAppointmentUseCase } from "../../application/repair/schedule-repair-appointment.use-case";
 import { GetRepairRequestUseCase } from "../../application/repair/get-repair-request.use-case";
@@ -7,8 +7,10 @@ import { GetAvailableTechniciansUseCase } from "../../application/repair/get-ava
 import { GetUserAppointmentsUseCase } from "../../application/repair/get-user-appointments.use-case";
 import { CancelAppointmentUseCase } from "../../application/repair/cancel-appointment.use-case";
 import {
-  RepairRepository,
-  RepairService as RepairDomainService,
+  REPAIR_REPOSITORY,
+  REPAIR_DOMAIN_SERVICE,
+  RepairRepositoryPort,
+  RepairDomainServicePort,
 } from "../../domain/repair/repair.port";
 import {
   RepairRequest,
@@ -35,8 +37,10 @@ export class RepairService {
     private readonly getAvailableTechniciansUseCase: GetAvailableTechniciansUseCase,
     private readonly getUserAppointmentsUseCase: GetUserAppointmentsUseCase,
     private readonly cancelAppointmentUseCase: CancelAppointmentUseCase,
-    private readonly repairRepository: RepairRepository,
-    private readonly repairDomainService: RepairDomainService,
+    @Inject(REPAIR_REPOSITORY)
+    private readonly repairRepository: RepairRepositoryPort,
+    @Inject(REPAIR_DOMAIN_SERVICE)
+    private readonly repairDomainService: RepairDomainServicePort,
   ) {}
 
   // Repair Requests

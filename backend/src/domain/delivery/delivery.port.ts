@@ -10,6 +10,16 @@ import {
   DeliveryRequest,
 } from "./delivery.entity";
 
+/**
+ * Injection token for DeliveryRepositoryPort
+ */
+export const DELIVERY_REPOSITORY = 'DELIVERY_REPOSITORY';
+
+/**
+ * Injection token for DeliveryServicePort
+ */
+export const DELIVERY_SERVICE = 'DELIVERY_SERVICE';
+
 export interface DeliveryRepositoryPort {
   /**
    * Trouve une zone de livraison par région, ville et commune

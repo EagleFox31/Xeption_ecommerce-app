@@ -113,4 +113,17 @@ export class CartOrderService {
   async processPayment(request: ProcessPaymentRequest): Promise<Payment> {
     return this.processPaymentUseCase.processPayment(request);
   }
+
+  // Invoice operations
+  async getOrderInvoice(orderId: string): Promise<any> {
+    // Ensure the order exists first
+    const order = await this.getOrderById(orderId);
+    if (!order) {
+      throw new Error(`Order with ID ${orderId} not found`);
+    }
+    
+    // This should use a repository method, but for now, we'll directly call it
+    // In a real application, this should be handled by a dedicated use case
+    return (this.updateOrderUseCase as any).repository.getOrderInvoice(orderId);
+  }
 }

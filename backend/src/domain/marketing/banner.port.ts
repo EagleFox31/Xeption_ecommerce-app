@@ -1,6 +1,11 @@
 import { MarketingBanner } from "./banner.entity";
 
 /**
+ * Injection token for MarketingBannerRepositoryPort
+ */
+export const MARKETING_BANNER_REPOSITORY = 'MARKETING_BANNER_REPOSITORY';
+
+/**
  * Marketing Banner Repository Port
  * Defines the contract for banner data access
  */
@@ -24,7 +29,7 @@ export interface MarketingBannerRepositoryPort {
    * Create a new banner
    */
   createBanner(
-    banner: Omit<MarketingBanner, "id" | "created_at" | "updated_at">,
+    banner: Omit<MarketingBanner, "id" | "created_at" | "updated_at" | "isCurrentlyActive" | "isExpired">,
   ): Promise<MarketingBanner>;
 
   /**

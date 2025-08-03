@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { AdvisoryRepositoryPort } from "../../domain/advisory/advisory.port";
+import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { AdvisoryRepositoryPort, ADVISORY_REPOSITORY } from "../../domain/advisory/advisory.port";
 import { AdvisoryRequest } from "../../domain/advisory/advisory.entity";
 
 @Injectable()
 export class GetAdvisoryRequestUseCase {
-  constructor(private readonly advisoryRepository: AdvisoryRepositoryPort) {}
+  constructor(
+    @Inject(ADVISORY_REPOSITORY)
+    private readonly advisoryRepository: AdvisoryRepositoryPort
+  ) {}
 
   async execute(id: string): Promise<AdvisoryRequest> {
     if (!id?.trim()) {

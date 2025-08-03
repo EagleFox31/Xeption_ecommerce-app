@@ -1,5 +1,5 @@
-import { Injectable } from "@nestjs/common";
-import { RepairRepository } from "../../domain/repair/repair.port";
+import { Injectable, Inject } from "@nestjs/common";
+import { REPAIR_REPOSITORY, RepairRepositoryPort } from "../../domain/repair/repair.port";
 import { RepairRequest } from "../../domain/repair/repair.entity";
 
 export interface GetRepairRequestQuery {
@@ -9,7 +9,10 @@ export interface GetRepairRequestQuery {
 
 @Injectable()
 export class GetRepairRequestUseCase {
-  constructor(private readonly repairRepository: RepairRepository) {}
+  constructor(
+    @Inject(REPAIR_REPOSITORY)
+    private readonly repairRepository: RepairRepositoryPort
+  ) {}
 
   async execute(query: GetRepairRequestQuery): Promise<RepairRequest> {
     const repairRequest = await this.repairRepository.getRepairRequestById(

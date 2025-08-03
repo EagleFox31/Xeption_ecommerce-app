@@ -7,7 +7,18 @@ import {
   AppointmentTimeSlot,
 } from "./repair.entity";
 
-export interface RepairRepository {
+/**
+ * Injection tokens — uniques et accessibles à l’exécution.
+ * Utilisez‑les dans vos modules NestJS pour lier les adapters
+ * (Prisma, Supabase, InMemory, etc.) à leurs ports de domaine.
+ */
+export const REPAIR_REPOSITORY = Symbol("RepairRepositoryPort");
+export const REPAIR_DOMAIN_SERVICE = Symbol("RepairDomainServicePort");
+
+/* ------------------------------------------------------------------
+ * Repository Port
+ * ------------------------------------------------------------------ */
+export interface RepairRepositoryPort {
   // Repair Requests
   createRepairRequest(
     request: Omit<RepairRequest, "id" | "createdAt" | "updatedAt">,
@@ -59,7 +70,10 @@ export interface RepairRepository {
   getEstimateById(id: string): Promise<RepairEstimate | null>;
 }
 
-export interface RepairService {
+/* ------------------------------------------------------------------
+ * Domain Service Port
+ * ------------------------------------------------------------------ */
+export interface RepairDomainServicePort {
   calculateRepairCost(
     deviceType: string,
     issueType: string,

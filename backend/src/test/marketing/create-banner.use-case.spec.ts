@@ -4,7 +4,7 @@ import {
   CreateBannerUseCase,
   CreateBannerRequest,
 } from "../../application/marketing/create-banner.use-case";
-import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.port";
+import { MarketingBannerRepositoryPort, MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 import { MarketingBanner } from "../../domain/marketing/banner.entity";
 
 describe("CreateBannerUseCase", () => {
@@ -27,7 +27,7 @@ describe("CreateBannerUseCase", () => {
       providers: [
         CreateBannerUseCase,
         {
-          provide: MarketingBannerRepositoryPort,
+          provide: MARKETING_BANNER_REPOSITORY,
           useValue: mockRepository,
         },
       ],
@@ -35,7 +35,7 @@ describe("CreateBannerUseCase", () => {
 
     useCase = module.get<CreateBannerUseCase>(CreateBannerUseCase);
     repository = module.get<MarketingBannerRepositoryPort>(
-      MarketingBannerRepositoryPort,
+      MARKETING_BANNER_REPOSITORY,
     );
   });
 

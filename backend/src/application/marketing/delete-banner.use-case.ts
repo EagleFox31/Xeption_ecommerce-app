@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.port";
+import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { MarketingBannerRepositoryPort, MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 
 /**
  * Delete Banner Use Case
@@ -8,6 +8,7 @@ import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.por
 @Injectable()
 export class DeleteBannerUseCase {
   constructor(
+    @Inject(MARKETING_BANNER_REPOSITORY)
     private readonly bannerRepository: MarketingBannerRepositoryPort,
   ) {}
 

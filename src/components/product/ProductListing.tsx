@@ -16,14 +16,17 @@ import {
   SlidersHorizontal,
   ChevronLeft,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { useProductFilters, SpecOption } from "../../hooks/useProductFilters";
+import { useParams } from "react-router-dom";
 
 interface ProductListingProps {
   initialCategory?: string;
 }
 
 const ProductListing = ({ initialCategory }: ProductListingProps) => {
+  const { category: categoryParam } = useParams<{ category?: string }>();
   const {
     filters,
     updateFilters,
@@ -35,10 +38,14 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
     handleCategoryChange,
     formatPrice,
     availableSpecs,
+    isLoading,
+    error,
+    setPriceRange,
+    setSearchParams,
   } = useProductFilters(initialCategory);
 
   // Pagination
-  const productsPerPage = 4;
+  const productsPerPage = 6; // Showing more products per page for better user experience
   const totalPages = Math.ceil(sortedProducts.length / productsPerPage);
   const paginatedProducts = sortedProducts.slice(
     (currentPage - 1) * productsPerPage,
@@ -51,9 +58,9 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">
-            {categoryParam === "all"
+            {filters.category === "all"
               ? "All Products"
-              : `${categoryParam} Products`}
+              : `${filters.category.charAt(0).toUpperCase() + filters.category.slice(1)} Products`}
           </h1>
           <p className="text-gray-400">
             Discover our wide range of high-quality tech products
@@ -99,9 +106,9 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
                     <Badge
                       key={category}
                       variant={
-                        categoryParam === category ? "default" : "outline"
+                        filters.category === category ? "default" : "outline"
                       }
-                      className={`mr-2 cursor-pointer ${categoryParam === category ? "bg-yellow-500 text-black" : "hover:bg-zinc-800"}`}
+                      className={`mr-2 cursor-pointer ${filters.category === category ? "bg-yellow-500 text-black" : "hover:bg-zinc-800"}`}
                       onClick={() => handleCategoryChange(category)}
                     >
                       {category.charAt(0).toUpperCase() + category.slice(1)}
@@ -181,7 +188,7 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
             {/* Sort and Results Count */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
               <p className="text-gray-400">
-                Showing {paginatedProducts.length} of {filteredProducts.length}{" "}
+                Showing {paginatedProducts.length} of {sortedProducts.length}{" "}
                 products
               </p>
 
@@ -202,21 +209,33 @@ const ProductListing = ({ initialCategory }: ProductListingProps) => {
               </Select>
             </div>
 
-            {/* Products */}
-            {paginatedProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* Loading State */}
+            {isLoading ? (
+              <div className="text-center py-12 bg-zinc-900 rounded-lg">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto text-yellow-500 mb-4" />
+                <p className="text-gray-400">Loading products...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 bg-zinc-900 rounded-lg">
+                <p className="text-red-400 mb-2">Failed to load products</p>
+                <p className="text-gray-400 text-sm">Please try again later</p>
+              </div>
+            ) : paginatedProducts.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
                 {paginatedProducts.map((product) => (
                   <ProductCard
                     key={product.id}
                     id={product.id}
                     name={product.name}
                     price={product.price}
-                    originalPrice={product.originalPrice}
-                    image={product.image}
-                    rating={product.rating}
-                    category={product.category}
-                    isNew={product.isNew}
-                    isFeatured={product.isFeatured}
+                    originalPrice={product.originalPrice || product.price * 1.2}
+                    image={product.images?.[0] || '/placeholder.jpg'}
+                    rating={product.rating || 4}
+                    category={product.categoryName || product.categoryId || 'unknown'}
+                    isNew={product.createdAt ?
+                          (Date.now() - new Date(product.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000)
+                          : false}
+                    isFeatured={product.features?.includes('featured') || false}
                   />
                 ))}
               </div>

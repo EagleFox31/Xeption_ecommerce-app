@@ -1,23 +1,43 @@
 /**
- * Entités métier pour le module backorder
- * Gestion des précommandes de produits hors stock
+ * Entités pour le module backorder
+ * Définit les objets de domaine pour les précommandes
  */
 
+/**
+ * Statuts possibles pour une précommande
+ */
 export enum BackorderStatus {
-  PENDING = "pending",
-  CONFIRMED = "confirmed",
-  NOTIFIED = "notified",
-  FULFILLED = "fulfilled",
-  CANCELLED = "cancelled",
+  PENDING = "pending",       // En attente de traitement
+  PROCESSING = "processing", // En cours de traitement
+  FULFILLED = "fulfilled",   // Complétée, produit disponible
+  CANCELLED = "cancelled",   // Annulée par l'utilisateur
+  EXPIRED = "expired",       // Expirée, dépassant la date limite
+  REJECTED = "rejected",     // Rejetée par l'administrateur
+  NOTIFIED = "notified"      // Client notifié de la disponibilité
 }
 
+/**
+ * Niveaux de priorité pour une précommande
+ */
 export enum BackorderPriority {
   LOW = "low",
   MEDIUM = "medium",
   HIGH = "high",
-  URGENT = "urgent",
+  URGENT = "urgent"
 }
 
+/**
+ * Préférences de notification de l'utilisateur
+ */
+export interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+}
+
+/**
+ * Demande de précommande
+ */
 export interface BackorderRequest {
   id: string;
   userId: string;
@@ -26,41 +46,46 @@ export interface BackorderRequest {
   maxPrice?: number;
   priority: BackorderPriority;
   status: BackorderStatus;
-  notificationPreferences: {
-    email: boolean;
-    sms: boolean;
-    push: boolean;
-  };
+  notificationPreferences: NotificationPreferences;
   expectedDeliveryDate?: Date;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
+/**
+ * Notification envoyée à l'utilisateur
+ */
 export interface BackorderNotification {
   id: string;
   backorderRequestId: string;
-  type: "availability" | "price_change" | "status_update";
+  type: string;
   message: string;
   sentAt: Date;
-  channels: string[];
+  readAt?: Date;
 }
 
+/**
+ * Information sur la disponibilité d'un produit
+ */
 export interface ProductAvailability {
   productId: string;
-  isAvailable: boolean;
-  currentStock: number;
+  inStock: boolean;
+  quantity: number;
   expectedRestockDate?: Date;
-  currentPrice: number;
+  price: number;
 }
 
+/**
+ * Résumé des précommandes
+ */
 export interface BackorderSummary {
   totalRequests: number;
   pendingRequests: number;
   fulfilledRequests: number;
-  averageWaitTime: number;
-  topRequestedProducts: {
+  cancelledRequests: number;
+  mostRequestedProducts: {
     productId: string;
-    requestCount: number;
+    count: number;
   }[];
 }

@@ -1,7 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import {
-  RepairRepository,
-  RepairService,
+  REPAIR_REPOSITORY,
+  REPAIR_DOMAIN_SERVICE,
+  RepairRepositoryPort,
+  RepairDomainServicePort,
 } from "../../domain/repair/repair.port";
 import { RepairStatus } from "../../domain/repair/repair.entity";
 
@@ -14,8 +16,10 @@ export interface CancelAppointmentCommand {
 @Injectable()
 export class CancelAppointmentUseCase {
   constructor(
-    private readonly repairRepository: RepairRepository,
-    private readonly repairService: RepairService,
+    @Inject(REPAIR_REPOSITORY)
+    private readonly repairRepository: RepairRepositoryPort,
+    @Inject(REPAIR_DOMAIN_SERVICE)
+    private readonly repairService: RepairDomainServicePort,
   ) {}
 
   async execute(command: CancelAppointmentCommand): Promise<void> {

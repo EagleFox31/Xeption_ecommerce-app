@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { RoleGuard } from "./common/auth/role.guard";
 import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
 import { CatalogModule } from "./modules/catalog/catalog.module";
@@ -10,14 +11,16 @@ import { AdvisoryModule } from "./modules/advisory/advisory.module";
 import { RFQModule } from "./modules/rfq/rfq.module";
 import { MarketingModule } from "./modules/marketing/marketing.module";
 import { configValidation } from "./config/config.validation";
+import { PrismaModule } from "./infrastructure/prisma/prisma.module";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: configValidation,
-      envFilePath: ".env",
+      envFilePath: [".env.production", ".env"],
     }),
+    PrismaModule,
     AuthModule,
     UsersModule,
     CatalogModule,
@@ -29,6 +32,8 @@ import { configValidation } from "./config/config.validation";
     MarketingModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    RoleGuard, // Provide RoleGuard globally
+  ],
 })
 export class AppModule {}

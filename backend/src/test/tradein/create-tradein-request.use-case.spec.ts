@@ -1,6 +1,6 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { CreateTradeInRequestUseCase } from "../../application/tradein/create-tradein-request.use-case";
-import { TradeInRepositoryPort } from "../../domain/tradein/tradein.port";
+import { TradeInRepositoryPort, TRADEIN_REPOSITORY } from "../../domain/tradein/tradein.port";
 import {
   DeviceCondition,
   TradeInStatus,
@@ -51,7 +51,7 @@ describe("CreateTradeInRequestUseCase", () => {
       providers: [
         CreateTradeInRequestUseCase,
         {
-          provide: TradeInRepositoryPort,
+          provide: TRADEIN_REPOSITORY,
           useValue: mockRepository,
         },
       ],
@@ -60,7 +60,7 @@ describe("CreateTradeInRequestUseCase", () => {
     useCase = module.get<CreateTradeInRequestUseCase>(
       CreateTradeInRequestUseCase,
     );
-    repository = module.get<TradeInRepositoryPort>(TradeInRepositoryPort);
+    repository = module.get<TradeInRepositoryPort>(TRADEIN_REPOSITORY);
   });
 
   afterEach(() => {

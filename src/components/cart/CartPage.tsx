@@ -1,46 +1,39 @@
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { LocationContext } from "@/context/LocationContext";
-import { ShoppingBag, Trash2, Tag } from "lucide-react";
-import {
-  loadCart,
-  updateCartItemQuantity,
-  removeFromCart,
-  saveCart,
-} from "@/services/cartService";
-import { isAuthenticated } from "@/services/auth";
-
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  image: string;
-}
+import { ShoppingBag, Trash2, Tag, Loader2, AlertCircle } from "lucide-react";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
+import { CartItem } from "@/services/cartApiService";
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [promoError, setPromoError] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Load cart items from localStorage on component mount
-  useEffect(() => {
-    const items = loadCart();
-    setCartItems(items);
-    setIsLoggedIn(isAuthenticated());
-  }, []);
+  
+  const { isAuthenticated } = useAuth();
+  const {
+    cart,
+    isLoading,
+    error,
+    updateItemQuantity,
+    removeItem,
+    isUpdatingItem,
+    isRemovingItem
+  } = useCart();
 
   const { userLocation, calculateDeliveryCost } = useContext(LocationContext);
+  
+  // Use cart data from our API integration
+  const cartItems = cart?.items || [];
   const subtotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
-    0,
+    0
   );
   const deliveryCost = calculateDeliveryCost(subtotal);
   const total = subtotal + deliveryCost - discount;
@@ -59,14 +52,12 @@ export default function CartPage() {
       return;
     }
 
-    const updatedCart = updateCartItemQuantity(itemId, newQuantity);
-    setCartItems(updatedCart);
+    updateItemQuantity({ itemId, quantity: newQuantity });
   };
 
   // Handle item removal
   const handleRemoveItem = (itemId: string) => {
-    const updatedCart = removeFromCart(itemId);
-    setCartItems(updatedCart);
+    removeItem(itemId);
   };
 
   // Apply promo code
@@ -110,7 +101,7 @@ export default function CartPage() {
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-8 text-gold-500">
           Your Shopping Cart
-          {!isLoggedIn && (
+          {!isAuthenticated && (
             <span className="text-sm font-normal text-gray-400 block mt-2">
               Connectez-vous pour sauvegarder votre panier
             </span>
@@ -119,7 +110,31 @@ export default function CartPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            {cartItems.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-12 bg-gray-900 rounded-lg">
+                <Loader2 className="h-16 w-16 mx-auto text-gold-500 mb-4 animate-spin" />
+                <h2 className="text-2xl font-medium text-white mb-2">
+                  Loading your cart...
+                </h2>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 bg-gray-900 rounded-lg">
+                <AlertCircle className="h-16 w-16 mx-auto text-red-500 mb-4" />
+                <h2 className="text-2xl font-medium text-white mb-2">
+                  Failed to load cart
+                </h2>
+                <p className="text-gray-400 mb-6">
+                  There was an error loading your cart. Please try again.
+                </p>
+                <Button
+                  variant="outline"
+                  className="border-gold-500 text-gold-500 hover:bg-gold-500 hover:text-black"
+                  onClick={() => navigate("/")}
+                >
+                  Return to Homepage
+                </Button>
+              </div>
+            ) : cartItems.length > 0 ? (
               <div className="space-y-4">
                 {cartItems.map((item) => (
                   <Card key={item.id} className="bg-gray-900 border-gray-800">
@@ -146,10 +161,17 @@ export default function CartPage() {
                             onClick={() =>
                               handleQuantityChange(item.id, item.quantity - 1)
                             }
+                            disabled={isUpdatingItem || isRemovingItem}
                           >
                             -
                           </Button>
-                          <span className="mx-3">{item.quantity}</span>
+                          <span className="mx-3">
+                            {isUpdatingItem ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              item.quantity
+                            )}
+                          </span>
                           <Button
                             variant="outline"
                             size="icon"
@@ -157,6 +179,7 @@ export default function CartPage() {
                             onClick={() =>
                               handleQuantityChange(item.id, item.quantity + 1)
                             }
+                            disabled={isUpdatingItem || isRemovingItem}
                           >
                             +
                           </Button>
@@ -171,8 +194,13 @@ export default function CartPage() {
                           size="icon"
                           className="text-red-500 mt-2"
                           onClick={() => handleRemoveItem(item.id)}
+                          disabled={isRemovingItem || isUpdatingItem}
                         >
-                          <Trash2 className="h-5 w-5" />
+                          {isRemovingItem ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-5 w-5" />
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -260,15 +288,22 @@ export default function CartPage() {
                   onClick={() =>
                     navigate("/checkout", {
                       state: {
-                        cartItems,
+                        cartId: cart?.id,
                         discount,
                         promoCode: discount > 0 ? promoCode : null,
                       },
                     })
                   }
-                  disabled={cartItems.length === 0}
+                  disabled={!cart || cartItems.length === 0 || isLoading}
                 >
-                  Proceed to Checkout
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    "Proceed to Checkout"
+                  )}
                 </Button>
               </div>
             </Card>

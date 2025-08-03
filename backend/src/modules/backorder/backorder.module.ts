@@ -14,66 +14,29 @@ import { GetUserBackorderRequestsUseCase } from "../../application/backorder/get
 import { UpdateBackorderRequestUseCase } from "../../application/backorder/update-backorder-request.use-case";
 import { CancelBackorderRequestUseCase } from "../../application/backorder/cancel-backorder-request.use-case";
 
-// Repositories
-import { BackorderRepository } from "../../domain/backorder/backorder.port";
-import { SupabaseBackorderRepository } from "../../infrastructure/supabase/repositories/backorder.repository";
-
-// Services externes (mocks pour l'instant)
+// Repositories and Services
 import {
+  BACKORDER_REPOSITORY,
   ProductStockService,
   BackorderNotificationService,
 } from "../../domain/backorder/backorder.port";
+import { PrismaBackorderRepository } from "../../infrastructure/prisma/repositories/backorder.repository";
+import { PrismaProductStockService } from "../../infrastructure/prisma/services/product-stock.service";
+import { PrismaBackorderNotificationService } from "../../infrastructure/prisma/services/backorder-notification.service";
+import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 
-// Mock implementations (à remplacer par de vraies implémentations)
-class MockProductStockService implements ProductStockService {
-  async checkStockLevel(productId: string): Promise<number> {
-    // Mock: retourne toujours 0 pour simuler un produit hors stock
-    return 0;
-  }
+/**
+ * Injection token for ProductStockService
+ */
+export const PRODUCT_STOCK_SERVICE = 'PRODUCT_STOCK_SERVICE';
 
-  async getExpectedRestockDate(productId: string): Promise<Date | null> {
-    // Mock: retourne une date dans 2 semaines
-    const date = new Date();
-    date.setDate(date.getDate() + 14);
-    return date;
-  }
-
-  async subscribeToStockUpdates(
-    productId: string,
-    callback: (stock: number) => void,
-  ): Promise<void> {
-    // Mock: ne fait rien pour l'instant
-    console.log(`Subscribed to stock updates for product ${productId}`);
-  }
-}
-
-class MockBackorderNotificationService implements BackorderNotificationService {
-  async sendAvailabilityNotification(
-    backorderRequest: any,
-    productAvailability: any,
-  ): Promise<void> {
-    console.log(
-      `Sending availability notification for request ${backorderRequest.id}`,
-    );
-  }
-
-  async sendStatusUpdateNotification(backorderRequest: any): Promise<void> {
-    console.log(
-      `Sending status update notification for request ${backorderRequest.id}`,
-    );
-  }
-
-  async sendPriceChangeNotification(
-    backorderRequest: any,
-    newPrice: number,
-  ): Promise<void> {
-    console.log(
-      `Sending price change notification for request ${backorderRequest.id}`,
-    );
-  }
-}
+/**
+ * Injection token for BackorderNotificationService
+ */
+export const BACKORDER_NOTIFICATION_SERVICE = 'BACKORDER_NOTIFICATION_SERVICE';
 
 @Module({
+  imports: [PrismaModule],
   controllers: [BackorderController],
   providers: [
     BackorderService,
@@ -87,18 +50,18 @@ class MockBackorderNotificationService implements BackorderNotificationService {
 
     // Repository
     {
-      provide: BackorderRepository,
-      useClass: SupabaseBackorderRepository,
+      provide: BACKORDER_REPOSITORY,
+      useClass: PrismaBackorderRepository,
     },
 
-    // Services externes (mocks)
+    // Services externes (Prisma implementations)
     {
-      provide: ProductStockService,
-      useClass: MockProductStockService,
+      provide: PRODUCT_STOCK_SERVICE,
+      useClass: PrismaProductStockService,
     },
     {
-      provide: BackorderNotificationService,
-      useClass: MockBackorderNotificationService,
+      provide: BACKORDER_NOTIFICATION_SERVICE,
+      useClass: PrismaBackorderNotificationService,
     },
   ],
   exports: [BackorderService],

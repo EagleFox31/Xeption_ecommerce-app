@@ -28,12 +28,25 @@ import {
   EstimateResponseDto,
 } from "./dto/repair.dto";
 
+/**
+ * Repair API Controller
+ *
+ * Endpoints are organized by resource type with clear relationships:
+ * 1. Repair Requests (/repair/requests/*)
+ * 2. Appointments (/repair/appointments/*) - linked to repair requests
+ * 3. Estimates (/repair/estimates/*) - linked to repair requests
+ * 4. Technicians (/repair/technicians/*) - manage technician resources
+ * 5. Utility operations - time slots, cost estimates
+ */
 @Controller("repair")
 @UseGuards(AuthGuard)
 export class RepairController {
   constructor(private readonly repairService: RepairService) {}
 
-  // Repair Requests
+  /**
+   * REPAIR REQUESTS OPERATIONS
+   * Primary resource for repair management
+   */
   @Post("requests")
   @HttpCode(HttpStatus.CREATED)
   async createRepairRequest(
@@ -83,7 +96,10 @@ export class RepairController {
     return await this.repairService.deleteRepairRequest(id, user.sub);
   }
 
-  // Technicians
+  /**
+   * TECHNICIAN OPERATIONS
+   * Resources for technician availability and management
+   */
   @Get("technicians")
   async getAvailableTechnicians(
     @Query() query: GetAvailableTechniciansDto,
@@ -96,7 +112,10 @@ export class RepairController {
     return await this.repairService.getTechnician(id);
   }
 
-  // Appointments
+  /**
+   * APPOINTMENT OPERATIONS
+   * Each appointment is linked to a repair request and technician
+   */
   @Post("appointments")
   @HttpCode(HttpStatus.CREATED)
   async scheduleAppointment(
@@ -137,7 +156,10 @@ export class RepairController {
     );
   }
 
-  // Estimates
+  /**
+   * ESTIMATE OPERATIONS
+   * Cost and repair estimates linked to repair requests
+   */
   @Post("estimates")
   @HttpCode(HttpStatus.CREATED)
   async createEstimate(
@@ -169,7 +191,10 @@ export class RepairController {
     return await this.repairService.getEstimate(id, user.sub);
   }
 
-  // Utility endpoints
+  /**
+   * UTILITY OPERATIONS
+   * Supporting endpoints for time slots and cost estimation
+   */
   @Get("time-slots/:technicianId")
   async getAvailableTimeSlots(
     @Param("technicianId") technicianId: string,

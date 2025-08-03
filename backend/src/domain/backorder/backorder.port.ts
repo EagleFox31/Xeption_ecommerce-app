@@ -12,6 +12,11 @@ import {
   BackorderPriority,
 } from "./backorder.entity";
 
+/**
+ * Injection token for BackorderRepository
+ */
+export const BACKORDER_REPOSITORY = 'BACKORDER_REPOSITORY';
+
 export interface BackorderRepository {
   // Gestion des demandes de précommande
   createBackorderRequest(
@@ -64,6 +69,11 @@ export interface BackorderNotificationService {
     newPrice: number,
   ): Promise<void>;
 }
+
+/**
+ * Injection token for ProductStockService
+ */
+export const PRODUCT_STOCK_SERVICE = 'PRODUCT_STOCK_SERVICE';
 
 export interface ProductStockService {
   checkStockLevel(productId: string): Promise<number>;

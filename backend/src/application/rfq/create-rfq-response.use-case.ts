@@ -2,8 +2,9 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Inject,
 } from "@nestjs/common";
-import { RFQRepository } from "../../domain/rfq/rfq.port";
+import { RFQRepository, RFQ_REPOSITORY } from "../../domain/rfq/rfq.port";
 import { RFQ, RFQStatus } from "../../domain/rfq/rfq.entity";
 
 export interface CreateRFQResponseCommand {
@@ -17,7 +18,10 @@ export interface CreateRFQResponseCommand {
 
 @Injectable()
 export class CreateRFQResponseUseCase {
-  constructor(private readonly rfqRepository: RFQRepository) {}
+  constructor(
+    @Inject(RFQ_REPOSITORY)
+    private readonly rfqRepository: RFQRepository
+  ) {}
 
   async execute(command: CreateRFQResponseCommand): Promise<RFQ> {
     // Only agents and admins can create responses

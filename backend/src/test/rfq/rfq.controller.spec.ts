@@ -1,8 +1,11 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 import { RFQController } from "../../modules/rfq/rfq.controller";
 import { RFQService } from "../../modules/rfq/rfq.service";
 import { AuthenticatedUser } from "../../common/auth/jwt.types";
 import { RFQStatus } from "../../domain/rfq/rfq.entity";
+import { AuthGuard } from "../../common/auth/auth.guard";
+import { createMockConfigService, MockAuthGuard } from "../test-utils";
 
 describe("RFQController", () => {
   let controller: RFQController;
@@ -31,8 +34,15 @@ describe("RFQController", () => {
           provide: RFQService,
           useValue: mockRFQService,
         },
+        {
+          provide: ConfigService,
+          useFactory: createMockConfigService,
+        },
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useClass(MockAuthGuard)
+    .compile();
 
     controller = module.get<RFQController>(RFQController);
     service = module.get<RFQService>(RFQService);

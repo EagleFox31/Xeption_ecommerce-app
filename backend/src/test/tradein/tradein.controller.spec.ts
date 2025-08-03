@@ -1,4 +1,5 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 import { TradeInController } from "../../modules/tradein/tradein.controller";
 import { TradeInService } from "../../modules/tradein/tradein.service";
 import {
@@ -6,6 +7,8 @@ import {
   TradeInStatus,
 } from "../../domain/tradein/tradein.entity";
 import { JwtPayload } from "../../common/auth/jwt.types";
+import { AuthGuard } from "../../common/auth/auth.guard";
+import { createMockConfigService, MockAuthGuard } from "../test-utils";
 
 describe("TradeInController", () => {
   let controller: TradeInController;
@@ -58,8 +61,15 @@ describe("TradeInController", () => {
           provide: TradeInService,
           useValue: mockTradeInService,
         },
+        {
+          provide: ConfigService,
+          useFactory: createMockConfigService,
+        },
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useClass(MockAuthGuard)
+    .compile();
 
     controller = module.get<TradeInController>(TradeInController);
     service = module.get<TradeInService>(TradeInService);

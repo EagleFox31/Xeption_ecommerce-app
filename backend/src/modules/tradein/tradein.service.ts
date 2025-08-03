@@ -1,10 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { CreateTradeInRequestUseCase } from "../../application/tradein/create-tradein-request.use-case";
 import { GetTradeInRequestUseCase } from "../../application/tradein/get-tradein-request.use-case";
 import { GetUserTradeInRequestsUseCase } from "../../application/tradein/get-user-tradein-requests.use-case";
 import { SearchDevicesUseCase } from "../../application/tradein/search-devices.use-case";
 import { EvaluateTradeInUseCase } from "../../application/tradein/evaluate-tradein.use-case";
-import { TradeInRepositoryPort } from "../../domain/tradein/tradein.port";
+import { TradeInRepositoryPort, TradeInServicePort, TRADEIN_SERVICE } from "../../domain/tradein/tradein.port";
 import {
   DeviceCondition,
   TradeInStatus,
@@ -20,7 +20,8 @@ export class TradeInService {
     private readonly getUserTradeInRequestsUseCase: GetUserTradeInRequestsUseCase,
     private readonly searchDevicesUseCase: SearchDevicesUseCase,
     private readonly evaluateTradeInUseCase: EvaluateTradeInUseCase,
-    private readonly tradeInRepository: TradeInRepositoryPort,
+    @Inject(TRADEIN_SERVICE)
+    private readonly tradeInService: TradeInServicePort,
   ) {}
 
   async createTradeInRequest(
@@ -55,7 +56,7 @@ export class TradeInService {
   }
 
   async getDevicesByCategory(category: string): Promise<Device[]> {
-    return await this.tradeInRepository.getDevicesByCategory(category);
+    return await this.tradeInService.getDevicesByCategory(category);
   }
 
   async evaluateTradeIn(
@@ -81,34 +82,13 @@ export class TradeInService {
     status: TradeInStatus,
     evaluatorNotes?: string,
   ): Promise<TradeInRequest> {
-    return await this.tradeInRepository.updateTradeInRequest(id, {
-      status,
-      evaluatorNotes,
-      evaluatedAt:
-        status === TradeInStatus.APPROVED || status === TradeInStatus.REJECTED
-          ? new Date()
-          : undefined,
-    });
+    return await this.tradeInService.updateTradeInStatus(id, status, evaluatorNotes);
   }
 
   async calculateEstimatedValue(
     deviceId: string,
     condition: DeviceCondition,
   ): Promise<number> {
-    const device = await this.tradeInRepository.getDeviceById(deviceId);
-    if (!device) {
-      throw new Error("Device not found");
-    }
-
-    const conditionMultipliers = {
-      [DeviceCondition.EXCELLENT]: 0.85,
-      [DeviceCondition.GOOD]: 0.7,
-      [DeviceCondition.FAIR]: 0.5,
-      [DeviceCondition.POOR]: 0.3,
-      [DeviceCondition.BROKEN]: 0.15,
-    };
-
-    const multiplier = conditionMultipliers[condition] || 0.15;
-    return Math.round(device.baseValue * multiplier);
+    return await this.tradeInService.calculateEstimatedValue(deviceId, condition);
   }
 }

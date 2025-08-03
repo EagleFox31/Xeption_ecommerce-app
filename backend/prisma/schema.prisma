@@ -1,0 +1,746 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl removed to fix validation issues
+}
+
+// Enums (based on USER-DEFINED types in PostgreSQL)
+enum UserRole {
+  client
+  agent
+  admin
+}
+
+enum OrderStatusEnum {
+  new
+  processing
+  shipped
+  delivered
+  cancelled
+}
+
+enum PaymentStatusEnum {
+  pending
+  paid
+  failed
+  refunded
+}
+
+enum PaymentMethodEnum {
+  om
+  momo
+  card
+  cash
+  paypal
+}
+
+enum TradeStatusEnum {
+  pending
+  accepted
+  rejected
+  completed
+  cancelled
+  quoted
+}
+
+enum PhysicalConditionEnum {
+  excellent
+  good
+  fair
+  poor
+  damaged
+}
+
+enum BatteryStateEnum {
+  excellent
+  good
+  average
+  poor
+  needs_replacement
+}
+
+enum BackOrderStatusEnum {
+  open
+  sourced
+  ordered
+  cancelled
+}
+
+enum BudgetStatusEnum {
+  open
+  in_consult
+  closed
+}
+
+enum RepairStatusEnum {
+  scheduled
+  in_progress
+  completed
+  cancelled
+}
+
+enum RfqStatusEnum {
+  new
+  answered
+  won
+  lost
+  draft
+  submitted
+  under_review
+  quoted
+  rejected
+  approved
+  closed
+}
+
+enum ProductTierEnum {
+  entry
+  standard
+  premium
+  pro
+}
+
+enum InventoryReasonEnum {
+  purchase
+  return
+  manual
+  sale
+  adjust
+}
+
+// Models
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()"))
+  email        String    @unique
+  passwordHash String?   @map("password_hash")
+  phone237     String    @map("phone_237")
+  fullName     String    @map("full_name")
+  role         UserRole  @default(client)
+  loyaltyPoints Int      @default(0) @map("loyalty_points")
+  preferredLang String   @default("fr") @map("preferred_lang")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @default(now()) @map("updated_at")
+
+  // Relations
+  addresses           Address[]
+  orders              Order[]
+  cart                Cart?
+  tradeIns            TradeIn[]
+  repairJobs          RepairJob[]
+  rfqs                Rfq[]
+  auditLogs           AuditLog[]
+  backOrderNotifications BackOrderNotification[] @relation("NotifiedBy")
+  inventoryLogs       InventoryLog[]
+  technicianAvailability TechnicianAvailability[]
+  budgetAdvisories    BudgetAdvisory[]
+  backOrders          BackOrder[]
+
+  @@map("users")
+}
+
+model Region {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+
+  // Relations
+  cities    City[]
+  addresses Address[]
+  deliveries Delivery[]
+
+  @@map("regions")
+}
+
+model City {
+  id        Int      @id @default(autoincrement())
+  name      String
+  regionId  Int      @map("region_id")
+
+  // Relations
+  region    Region   @relation(fields: [regionId], references: [id])
+  communes  Commune[]
+  addresses Address[]
+  deliveries Delivery[]
+
+  @@map("cities")
+}
+
+model Commune {
+  id        Int      @id @default(autoincrement())
+  name      String
+  cityId    Int      @map("city_id")
+
+  // Relations
+  city      City     @relation(fields: [cityId], references: [id])
+  addresses Address[]
+  deliveries Delivery[]
+
+  @@map("communes")
+}
+
+model Address {
+  id          BigInt    @id @default(autoincrement())
+  userId      String    @map("user_id")
+  country     String    @default("Cameroon")
+  regionId    Int?      @map("region_id")
+  cityId      Int?      @map("city_id")
+  communeId   Int?      @map("commune_id")
+  addressLine String    @map("address_line")
+  latitude    Decimal?
+  longitude   Decimal?
+  isDefault   Boolean   @default(false) @map("is_default")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @map("updated_at")
+
+  // Relations
+  user        User      @relation(fields: [userId], references: [id])
+  region      Region?   @relation(fields: [regionId], references: [id])
+  city        City?     @relation(fields: [cityId], references: [id])
+  commune     Commune?  @relation(fields: [communeId], references: [id])
+  orders      Order[]
+
+  @@map("addresses")
+}
+
+model Category {
+  id         BigInt     @id @default(autoincrement())
+  name       String
+  slug       String     @unique
+  parentId   BigInt?    @map("parent_id")
+  skuPrefix  String     @default("") @map("sku_prefix")
+
+  // Relations
+  parent        Category?    @relation("CategorySubcategories", fields: [parentId], references: [id])
+  subcategories Category[]   @relation("CategorySubcategories")
+  products      Product[]
+  brands        CategoryBrand[]
+  skuPrefix_rel CategorySkuPrefix?
+  banners       MarketingBanner[]
+  rfqItems      RfqItem[]
+  productSeries ProductSeries[]
+
+  @@map("categories")
+}
+
+model CategorySkuPrefix {
+  categoryId  BigInt  @id @map("category_id")
+  prefix      String  @unique
+
+  // Relations
+  category    Category @relation(fields: [categoryId], references: [id])
+
+  @@map("category_sku_prefix")
+}
+
+model Brand {
+  id         BigInt     @id @default(autoincrement())
+  name       String     @unique
+  slug       String     @unique
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @default(now()) @map("updated_at")
+
+  // Relations
+  products   Product[]
+  categories CategoryBrand[]
+  productSeries ProductSeries[]
+
+  @@map("brands")
+}
+
+model CategoryBrand {
+  categoryId  BigInt  @map("category_id")
+  brandId     BigInt  @map("brand_id")
+
+  // Relations
+  category    Category @relation(fields: [categoryId], references: [id])
+  brand       Brand    @relation(fields: [brandId], references: [id])
+
+  @@id([categoryId, brandId])
+  @@map("category_brands")
+}
+
+model ProductSeries {
+  id         BigInt     @id @default(autoincrement())
+  name       String
+  slug       String     @unique
+  categoryId BigInt     @map("category_id")
+  brandId    BigInt     @map("brand_id")
+  createdAt  DateTime   @default(now()) @map("created_at")
+  updatedAt  DateTime   @default(now()) @map("updated_at")
+
+  // Relations
+  category   Category   @relation(fields: [categoryId], references: [id])
+  brand      Brand      @relation(fields: [brandId], references: [id])
+  products   Product[]
+
+  @@map("product_series")
+}
+
+model Product {
+  id           BigInt     @id @default(autoincrement())
+  sku          String?    @unique
+  name         String
+  slug         String     @unique
+  categoryId   BigInt     @map("category_id")
+  priceXaf     Decimal    @map("price_xaf")
+  currency     String     @default("XAF")
+  stockQty     Int        @default(0) @map("stock_qty")
+  weightKg     Decimal?   @map("weight_kg")
+  dimensionsMm Json?      @map("dimensions_mm")
+  specs        Json?
+  description  String?
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @default(now()) @map("updated_at")
+  brandId      BigInt?    @map("brand_id")
+  i18nDescriptions Json?  @map("i18n_descriptions")
+  seriesId     BigInt?    @map("series_id")
+  tier         ProductTierEnum @default(standard)
+  promoPct     Int        @default(0) @map("promo_pct")
+  promoPriceXaf Decimal?  @map("promo_price_xaf")
+  hasVariants  Boolean    @default(false) @map("has_variants")
+
+  // Relations
+  category        Category  @relation(fields: [categoryId], references: [id])
+  brand           Brand?    @relation(fields: [brandId], references: [id])
+  series          ProductSeries? @relation(fields: [seriesId], references: [id])
+  images          ProductImage[]
+  features        ProductFeature[]
+  specifications  ProductSpecification[]
+  descriptions    ProductDescription[]
+  variants        ProductVariant[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  inventoryLogs   InventoryLog[]
+  promotions      Promotion[]
+  backOrderNotifications BackOrderNotification[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id         BigInt    @id @default(autoincrement())
+  productId  BigInt    @map("product_id")
+  imageUrl   String    @map("image_url")
+  position   Int?      @default(0)
+
+  // Relations
+  product    Product   @relation(fields: [productId], references: [id])
+
+  @@map("product_images")
+}
+
+model ProductFeature {
+  id         BigInt    @id @default(autoincrement())
+  productId  BigInt    @map("product_id")
+  title      String
+  iconUrl    String?   @map("icon_url")
+  highlight  Boolean?  @default(true)
+  position   Int?      @default(0)
+
+  // Relations
+  product    Product   @relation(fields: [productId], references: [id])
+
+  @@map("product_features")
+}
+
+model ProductSpecification {
+  id         BigInt    @id @default(autoincrement())
+  productId  BigInt    @map("product_id")
+  label      String
+  value      String
+  unit       String?
+  valueType  String?   @default("string") @map("value_type")
+  position   Int?      @default(0)
+
+  // Relations
+  product    Product   @relation(fields: [productId], references: [id])
+
+  @@map("product_specifications")
+}
+
+model ProductDescription {
+  productId  BigInt    @map("product_id")
+  locale     String
+  title      String?
+  shortDesc  String?   @map("short_desc")
+  longDesc   String?   @map("long_desc")
+  detailsJson Json?    @map("details_json")
+
+  // Relations
+  product    Product   @relation(fields: [productId], references: [id])
+
+  @@id([productId, locale])
+  @@map("product_descriptions")
+}
+
+model VariantAttribute {
+  id         BigInt    @id @default(autoincrement())
+  name       String    @unique
+  slug       String    @unique
+  valueType  String?   @default("string") @map("value_type")
+
+  // Relations
+  values     VariantValue[]
+  productVariantValues ProductVariantValue[]
+
+  @@map("variant_attributes")
+}
+
+model VariantValue {
+  id             BigInt    @id @default(autoincrement())
+  attributeId    BigInt    @map("attribute_id")
+  value          String
+  normalizedValue String?  @map("normalized_value")
+  position       Int?      @default(0)
+
+  // Relations
+  attribute      VariantAttribute @relation(fields: [attributeId], references: [id])
+  variantValues  ProductVariantValue[]
+
+  @@map("variant_values")
+}
+
+model ProductVariant {
+  id            BigInt    @id @default(autoincrement())
+  productId     BigInt    @map("product_id")
+  variantKey    String    @map("variant_key")
+  attrs         Json
+  extraPriceXaf Decimal?  @default(0) @map("extra_price_xaf")
+  stockQty      Int       @default(0) @map("stock_qty")
+
+  // Relations
+  product       Product   @relation(fields: [productId], references: [id])
+  attributeValues ProductVariantValue[]
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+
+  @@map("product_variants")
+}
+
+model ProductVariantValue {
+  variantId     BigInt    @map("variant_id")
+  attributeId   BigInt    @map("attribute_id")
+  valueId       BigInt    @map("value_id")
+
+  // Relations
+  variant       ProductVariant   @relation(fields: [variantId], references: [id])
+  attribute     VariantAttribute @relation(fields: [attributeId], references: [id])
+  value         VariantValue     @relation(fields: [valueId], references: [id])
+
+  @@id([variantId, attributeId])
+  @@map("product_variant_values")
+}
+
+model Cart {
+  userId    String    @id @map("user_id")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @map("updated_at")
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id])
+  items     CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id         BigInt    @id @default(autoincrement())
+  cartUserId String    @map("cart_user_id")
+  productId  BigInt    @map("product_id")
+  variantId  BigInt?   @map("variant_id")
+  qty        Int
+
+  // Relations
+  cart       Cart      @relation(fields: [cartUserId], references: [userId])
+  product    Product   @relation(fields: [productId], references: [id])
+  variant    ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("cart_items")
+}
+
+model Order {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()"))
+  userId             String           @map("user_id")
+  amountXaf          Decimal          @map("amount_xaf")
+  shippingFeeXaf     Decimal?         @default(0) @map("shipping_fee_xaf")
+  taxXaf             Decimal?         @default(0) @map("tax_xaf")
+  discountXaf        Decimal?         @default(0) @map("discount_xaf")
+  paymentStatus      PaymentStatusEnum @default(pending) @map("payment_status")
+  paymentMethod      PaymentMethodEnum? @map("payment_method")
+  deliveryMethod     String
+  deliveryAddressId  BigInt?          @map("delivery_address_id")
+  trackingCode       String?          @map("tracking_code")
+  status             OrderStatusEnum  @default(new) @map("status")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @default(now()) @map("updated_at")
+
+  // Relations
+  user               User             @relation(fields: [userId], references: [id])
+  deliveryAddress    Address?         @relation(fields: [deliveryAddressId], references: [id])
+  items              OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id           BigInt    @id @default(autoincrement())
+  orderId      String    @map("order_id")
+  productId    BigInt    @map("product_id")
+  variantId    BigInt?   @map("variant_id")
+  qty          Int
+  unitPriceXaf Decimal   @map("unit_price_xaf")
+
+  // Relations
+  order        Order     @relation(fields: [orderId], references: [id])
+  product      Product   @relation(fields: [productId], references: [id])
+  variant      ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@map("order_items")
+}
+
+model TradeIn {
+  id                String             @id @default(dbgenerated("gen_random_uuid()"))
+  userId            String             @map("user_id")
+  deviceType        String             @map("device_type")
+  brand             String
+  model             String
+  physicalCondition PhysicalConditionEnum @default(fair) @map("physical_condition")
+  batteryState      BatteryStateEnum   @default(average) @map("battery_state")
+  invoiceProvided   Boolean            @default(false) @map("invoice_provided")
+  isUnlocked        Boolean            @default(true) @map("is_unlocked")
+  quoteValueXaf     Decimal?           @map("quote_value_xaf")
+  status            TradeStatusEnum    @default(pending)
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @default(now()) @map("updated_at")
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id])
+  photos            TradeInPhoto[]
+
+  @@map("trade_ins")
+}
+
+model TradeInPhoto {
+  id         BigInt    @id @default(autoincrement())
+  tradeInId  String    @map("trade_in_id")
+  photoUrl   String    @map("photo_url")
+
+  // Relations
+  tradeIn    TradeIn   @relation(fields: [tradeInId], references: [id])
+
+  @@map("trade_in_photos")
+}
+
+model Delivery {
+  id          BigInt    @id @default(autoincrement())
+  regionId    Int       @map("region_id")
+  cityId      Int?      @map("city_id")
+  communeId   Int?      @map("commune_id")
+  feeXaf      Decimal   @map("fee_xaf")
+  etaDays     Int?      @default(2) @map("eta_days")
+  cashOnDelivery Boolean? @default(true) @map("cash_on_delivery")
+
+  // Relations
+  region      Region    @relation(fields: [regionId], references: [id])
+  city        City?     @relation(fields: [cityId], references: [id])
+  commune     Commune?  @relation(fields: [communeId], references: [id])
+
+  @@map("deliveries")
+}
+
+model InventoryLog {
+  id          BigInt             @id @default(autoincrement())
+  productId   BigInt             @map("product_id")
+  qtyChange   Int                @map("qty_change")
+  reason      InventoryReasonEnum
+  actorId     String?            @map("actor_id")
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  // Relations
+  product     Product            @relation(fields: [productId], references: [id])
+  actor       User?              @relation(fields: [actorId], references: [id])
+
+  @@map("inventory_logs")
+}
+
+model BackOrder {
+  id               String             @id @default(dbgenerated("gen_random_uuid()"))
+  userId           String             @map("user_id")
+  productRef       String             @map("product_ref")
+  desiredQty       Int                @default(1) @map("desired_qty")
+  maxBudgetXaf     Decimal?           @map("max_budget_xaf")
+  status           BackOrderStatusEnum @default(open)
+  agentNote        String?            @map("agent_note")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  notificationSent Boolean            @default(false) @map("notification_sent")
+
+  // Relations
+  user             User               @relation(fields: [userId], references: [id])
+  notifications    BackOrderNotification[]
+
+  @@map("back_orders")
+}
+
+model BackOrderNotification {
+  id           BigInt    @id @default(autoincrement())
+  backOrderId  String?   @map("back_order_id")
+  productId    BigInt?   @map("product_id")
+  notifiedAt   DateTime  @default(now()) @map("notified_at")
+  notifiedBy   String?   @map("notified_by")
+
+  // Relations
+  backOrder    BackOrder? @relation(fields: [backOrderId], references: [id])
+  product      Product?   @relation(fields: [productId], references: [id])
+  notifier     User?      @relation("NotifiedBy", fields: [notifiedBy], references: [id])
+
+  @@map("back_order_notifications")
+}
+
+model BudgetAdvisory {
+  id               String            @id @default(dbgenerated("gen_random_uuid()"))
+  userId           String            @map("user_id")
+  budgetXaf        Decimal           @map("budget_xaf")
+  usageContext     String?           @map("usage_context")
+  status           BudgetStatusEnum  @default(open)
+  agentSuggestions Json?             @map("agent_suggestions")
+  createdAt        DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  user             User              @relation(fields: [userId], references: [id])
+
+  @@map("budget_advisories")
+}
+
+model RepairJob {
+  id               String            @id @default(dbgenerated("gen_random_uuid()"))
+  userId           String            @map("user_id")
+  deviceInfo       Json              @map("device_info")
+  problemDesc      String            @map("problem_desc")
+  preferredDate    DateTime?         @map("preferred_date")
+  status           RepairStatusEnum  @default(scheduled)
+  technicianNotes  Json?             @map("technician_notes")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @default(now()) @map("updated_at")
+
+  // Relations
+  user             User              @relation(fields: [userId], references: [id])
+
+  @@map("repair_jobs")
+}
+
+model TechnicianAvailability {
+  technicianId    String     @map("technician_id")
+  availableDate   DateTime   @map("available_date")
+  availableHours  String[]   @map("available_hours")
+
+  // Relations
+  technician      User       @relation(fields: [technicianId], references: [id])
+
+  @@id([technicianId, availableDate])
+  @@map("technician_availability")
+}
+
+model Rfq {
+  id              String        @id @default(dbgenerated("gen_random_uuid()"))
+  companyName     String        @map("company_name")
+  contactName     String        @map("contact_name")
+  contactEmail    String        @map("contact_email")
+  budgetMinXaf    Decimal?      @map("budget_min_xaf")
+  budgetMaxXaf    Decimal?      @map("budget_max_xaf")
+  status          RfqStatusEnum @default(draft) @map("rfq_status")
+  answerDocUrl    String?       @map("answer_doc_url")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  isUrgent        Boolean?      @default(false) @map("is_urgent")
+  comment         String?
+  deliveryDeadline DateTime?    @map("delivery_deadline")
+  submittedAt     DateTime?     @map("submitted_at")
+  createdBy       String?       @map("created_by")
+
+  // Relations
+  creator         User?         @relation(fields: [createdBy], references: [id])
+  items           RfqItem[]
+
+  @@map("rfqs")
+}
+
+model RfqItem {
+  id           BigInt    @id @default(autoincrement())
+  rfqId        String    @map("rfq_id")
+  categoryId   BigInt    @map("category_id")
+  qty          Int
+  specsNote    String?   @map("specs_note")
+
+  // Relations
+  rfq          Rfq       @relation(fields: [rfqId], references: [id])
+  category     Category  @relation(fields: [categoryId], references: [id])
+
+  @@map("rfq_items")
+}
+
+model MarketingBanner {
+  id          BigInt    @id @default(autoincrement())
+  title237    String    @map("title_237")
+  imageUrl    String    @map("image_url")
+  ctaUrl      String    @map("cta_url")
+  categoryId  BigInt?   @map("category_id")
+  priority    Int?      @default(0)
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime  @map("end_date")
+  active      Boolean?  @default(true)
+
+  // Relations
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("marketing_banners")
+}
+
+model Promotion {
+  id         String    @id @default(dbgenerated("gen_random_uuid()"))
+  productId  BigInt    @map("product_id")
+  promoPct   Int       @map("promo_pct")
+  startsAt   DateTime  @map("starts_at")
+  endsAt     DateTime  @map("ends_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  product    Product   @relation(fields: [productId], references: [id])
+
+  @@map("promotions")
+}
+
+model SkuCounter {
+  prefix    String    @id
+  lastSeq   BigInt    @default(0) @map("last_seq")
+
+  @@map("sku_counters")
+}
+
+model Setting {
+  key     String    @id
+  value   Json
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id          BigInt    @id @default(autoincrement())
+  userId      String?   @map("user_id")
+  action      String
+  tableName   String    @map("table_name")
+  recordId    String?   @map("record_id")
+  beforeState Json?     @map("before_state")
+  afterState  Json?     @map("after_state")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user        User?     @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
+

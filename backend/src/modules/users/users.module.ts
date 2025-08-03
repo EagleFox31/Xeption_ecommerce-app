@@ -9,10 +9,12 @@ import { CreateUserAddressUseCase } from "../../application/users/create-user-ad
 import { UpdateUserAddressUseCase } from "../../application/users/update-user-address.use-case";
 import { DeleteUserAddressUseCase } from "../../application/users/delete-user-address.use-case";
 import { SetDefaultAddressUseCase } from "../../application/users/set-default-address.use-case";
-import { UserRepository } from "../../infrastructure/supabase/repositories/user.repository";
-import { UserRepositoryPort } from "../../domain/users/user.port";
+import { PrismaUserRepository } from "../../infrastructure/prisma/repositories/user.repository";
+import { USER_REPOSITORY } from "../../domain/users/user.port";
+import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
 
 @Module({
+  imports: [PrismaModule],
   controllers: [UsersController],
   providers: [
     UsersService,
@@ -25,8 +27,8 @@ import { UserRepositoryPort } from "../../domain/users/user.port";
     DeleteUserAddressUseCase,
     SetDefaultAddressUseCase,
     {
-      provide: UserRepositoryPort,
-      useClass: UserRepository,
+      provide: USER_REPOSITORY,
+      useClass: PrismaUserRepository,
     },
   ],
   exports: [UsersService],

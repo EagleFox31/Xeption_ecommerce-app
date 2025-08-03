@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Inject } from "@nestjs/common";
 import { CreateAdvisoryRequestUseCase } from "../../application/advisory/create-advisory-request.use-case";
 import { GetAdvisoryRequestUseCase } from "../../application/advisory/get-advisory-request.use-case";
 import { GetUserAdvisoryRequestsUseCase } from "../../application/advisory/get-user-advisory-requests.use-case";
@@ -19,6 +19,7 @@ import {
   AdvisoryRepositoryPort,
   AdvisoryRequestListOptions,
   UpdateAdvisoryRequestData,
+  ADVISORY_REPOSITORY
 } from "../../domain/advisory/advisory.port";
 
 @Injectable()
@@ -28,6 +29,7 @@ export class AdvisoryService {
     private readonly getAdvisoryRequestUseCase: GetAdvisoryRequestUseCase,
     private readonly getUserAdvisoryRequestsUseCase: GetUserAdvisoryRequestsUseCase,
     private readonly getAvailableProductsUseCase: GetAvailableProductsUseCase,
+    @Inject(ADVISORY_REPOSITORY)
     private readonly advisoryRepository: AdvisoryRepositoryPort,
   ) {}
 

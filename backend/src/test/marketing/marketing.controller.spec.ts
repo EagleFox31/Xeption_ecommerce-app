@@ -1,8 +1,12 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 import { MarketingController } from "../../modules/marketing/marketing.controller";
 import { MarketingService } from "../../modules/marketing/marketing.service";
 import { MarketingBanner } from "../../domain/marketing/banner.entity";
 import { AuthenticatedUser } from "../../common/auth/jwt.types";
+import { AuthGuard } from "../../common/auth/auth.guard";
+import { RoleGuard } from "../../common/auth/role.guard";
+import { MockAuthGuard, mockConfigService } from "../mocks/auth-guard.mock";
 import {
   CreateMarketingBannerDto,
   UpdateMarketingBannerDto,
@@ -52,8 +56,17 @@ describe("MarketingController", () => {
           provide: MarketingService,
           useValue: mockMarketingService,
         },
+        {
+          provide: ConfigService,
+          useValue: mockConfigService,
+        }
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useClass(MockAuthGuard)
+    .overrideGuard(RoleGuard)
+    .useValue({ canActivate: () => true })
+    .compile();
 
     controller = module.get<MarketingController>(MarketingController);
     service = module.get<MarketingService>(MarketingService);

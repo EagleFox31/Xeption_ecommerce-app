@@ -2,8 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from "@nestjs/common";
-import { MarketingBannerRepositoryPort } from "../../domain/marketing/banner.port";
+import { MarketingBannerRepositoryPort, MARKETING_BANNER_REPOSITORY } from "../../domain/marketing/banner.port";
 import { MarketingBanner } from "../../domain/marketing/banner.entity";
 
 export interface UpdateBannerRequest {
@@ -25,6 +26,7 @@ export interface UpdateBannerRequest {
 @Injectable()
 export class UpdateBannerUseCase {
   constructor(
+    @Inject(MARKETING_BANNER_REPOSITORY)
     private readonly bannerRepository: MarketingBannerRepositoryPort,
   ) {}
 

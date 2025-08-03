@@ -1,9 +1,12 @@
 import { Test, TestingModule } from "@nestjs/testing";
+import { ConfigService } from "@nestjs/config";
 import { AuthController } from "../../modules/auth/auth.controller";
 import { GetUserProfileUseCase } from "../../application/auth/get-user-profile.use-case";
 import { ValidateUserUseCase } from "../../application/auth/validate-user.use-case";
 import { UserProfile } from "../../domain/auth/auth.entity";
 import { AuthenticatedUser } from "../../common/auth/jwt.types";
+import { AuthGuard } from "../../common/auth/auth.guard";
+import { createMockConfigService, MockAuthGuard } from "../test-utils";
 
 describe("AuthController", () => {
   let controller: AuthController;
@@ -44,8 +47,15 @@ describe("AuthController", () => {
             execute: jest.fn(),
           },
         },
+        {
+          provide: ConfigService,
+          useFactory: createMockConfigService,
+        },
       ],
-    }).compile();
+    })
+    .overrideGuard(AuthGuard)
+    .useClass(MockAuthGuard)
+    .compile();
 
     controller = module.get<AuthController>(AuthController);
     getUserProfileUseCase = module.get<GetUserProfileUseCase>(

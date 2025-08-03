@@ -1,10 +1,13 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
-import { UserRepositoryPort } from "../../domain/users/user.port";
+import { Injectable, NotFoundException, Inject } from "@nestjs/common";
+import { UserRepositoryPort, USER_REPOSITORY } from "../../domain/users/user.port";
 import { UserAddress, CreateAddressDto } from "../../domain/users/user.entity";
 
 @Injectable()
 export class CreateUserAddressUseCase {
-  constructor(private readonly userRepository: UserRepositoryPort) {}
+  constructor(
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: UserRepositoryPort
+  ) {}
 
   async execute(
     userId: string,

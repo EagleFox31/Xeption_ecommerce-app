@@ -16,7 +16,7 @@ import { Type } from "class-transformer";
 import {
   AdvisoryRequestStatus,
   AdvisoryRequestPriority,
-} from "../../domain/advisory/advisory.entity";
+} from "../../../domain/advisory/advisory.entity";
 
 export class AdvisoryBudgetDto {
   @IsNumber()
@@ -32,8 +32,7 @@ export class AdvisoryBudgetDto {
   currency: string = "XAF";
 
   @IsBoolean()
-  @IsOptional()
-  is_flexible?: boolean = false;
+  is_flexible: boolean = false;
 }
 
 export class AdvisoryPreferencesDto {

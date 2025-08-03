@@ -5,12 +5,15 @@ import { CreateAdvisoryRequestUseCase } from "../../application/advisory/create-
 import { GetAdvisoryRequestUseCase } from "../../application/advisory/get-advisory-request.use-case";
 import { GetUserAdvisoryRequestsUseCase } from "../../application/advisory/get-user-advisory-requests.use-case";
 import { GetAvailableProductsUseCase } from "../../application/advisory/get-available-products.use-case";
-import { AdvisoryRepository } from "../../infrastructure/supabase/repositories/advisory.repository";
-import { ProductRepository } from "../../infrastructure/supabase/repositories/product.repository";
+import { ADVISORY_REPOSITORY } from "../../domain/advisory/advisory.port";
+import { PRODUCT_REPOSITORY } from "../../domain/catalog/product.port";
+import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
+import { PrismaAdvisoryRepository } from "../../infrastructure/prisma/repositories/advisory.repository";
+import { PrismaProductRepository } from "../../infrastructure/prisma/repositories/product.repository";
 import { AdvisoryRepositoryPort } from "../../domain/advisory/advisory.port";
-import { ProductRepositoryPort } from "../../domain/catalog/product.port";
 
 @Module({
+  imports: [PrismaModule],
   controllers: [AdvisoryController],
   providers: [
     AdvisoryService,
@@ -18,13 +21,19 @@ import { ProductRepositoryPort } from "../../domain/catalog/product.port";
     GetAdvisoryRequestUseCase,
     GetUserAdvisoryRequestsUseCase,
     GetAvailableProductsUseCase,
+    // Explicit factory provider to ensure proper typing
     {
-      provide: AdvisoryRepositoryPort,
-      useClass: AdvisoryRepository,
+      provide: ADVISORY_REPOSITORY,
+      useFactory: (prismaAdvisoryRepo: PrismaAdvisoryRepository): AdvisoryRepositoryPort => {
+        return prismaAdvisoryRepo;
+      },
+      inject: [PrismaAdvisoryRepository]
     },
+    // Register the implementation class separately
+    PrismaAdvisoryRepository,
     {
-      provide: ProductRepositoryPort,
-      useClass: ProductRepository,
+      provide: PRODUCT_REPOSITORY,
+      useClass: PrismaProductRepository, // Using Prisma implementation
     },
   ],
   exports: [AdvisoryService],

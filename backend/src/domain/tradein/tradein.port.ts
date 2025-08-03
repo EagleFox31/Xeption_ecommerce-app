@@ -6,6 +6,9 @@ import {
   TradeInStatus,
 } from "./tradein.entity";
 
+export const TRADEIN_REPOSITORY = Symbol('TradeInRepositoryPort');
+export const TRADEIN_SERVICE = Symbol('TradeInServicePort');
+
 export interface TradeInRepositoryPort {
   // Trade-in requests
   createTradeInRequest(

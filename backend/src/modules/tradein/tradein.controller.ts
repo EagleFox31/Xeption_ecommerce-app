@@ -23,10 +23,22 @@ import {
   DeviceResponseDto,
 } from "./dto/tradein.dto";
 
+/**
+ * TradeIn API Controller
+ *
+ * Endpoints are organized by resource type:
+ * 1. Request operations (/tradein/requests/*)
+ * 2. Device operations (/tradein/devices/*)
+ */
 @Controller("tradein")
 @UseGuards(AuthGuard)
 export class TradeInController {
   constructor(private readonly tradeInService: TradeInService) {}
+
+  /**
+   * REQUESTS OPERATIONS
+   * Endpoints pour la gestion des demandes de reprise
+   */
 
   /**
    * Créer une nouvelle demande de reprise
@@ -66,6 +78,11 @@ export class TradeInController {
   ): Promise<TradeInRequestResponseDto> {
     return await this.tradeInService.getTradeInRequest(id, user.sub);
   }
+
+  /**
+   * DEVICES OPERATIONS
+   * Endpoints pour la recherche et la consultation des appareils
+   */
 
   /**
    * Rechercher des appareils pour la reprise
