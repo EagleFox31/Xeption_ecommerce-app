@@ -3,11 +3,9 @@ import { PrismaService } from "../prisma.service";
 import { RepairStatusEnum } from "@prisma/client";
 import {
   RepairRequest,
-  Technician,
   RepairAppointment,
   RepairEstimate,
   RepairStatus,
-  TechnicianSpecialty,
   AppointmentTimeSlot,
 } from "../../../domain/repair/repair.entity";
 import { RepairRepositoryPort } from "../../../domain/repair/repair.port";
@@ -134,98 +132,6 @@ export class PrismaRepairRepository implements RepairRepositoryPort {
     await this.prisma.repairJob.delete({
       where: { id },
     });
-  }
-
-  // Technicians
-  async getTechnicianById(id: string): Promise<Technician | null> {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      include: {
-        technicianAvailability: true,
-      },
-    });
-
-    if (!user || user.role !== "agent") {
-      return null;
-    }
-
-    return this.mapUserToTechnician(user);
-  }
-
-  async getAvailableTechnicians(
-    specialty: TechnicianSpecialty,
-    location: { region: string; city: string }
-  ): Promise<Technician[]> {
-    // Récupérer tous les techniciens (utilisateurs avec le rôle 'agent')
-    const users = await this.prisma.user.findMany({
-      where: {
-        role: "agent",
-      },
-      include: {
-        technicianAvailability: true,
-        // Ici on pourrait inclure d'autres relations si nécessaire
-      },
-    });
-
-    // Transformer les utilisateurs en techniciens et filtrer selon les critères
-    return users
-      .map((user) => this.mapUserToTechnician(user))
-      .filter((technician) => {
-        // Filtrer par disponibilité
-        if (!technician.isAvailable) return false;
-        
-        // Filtrer par spécialité
-        if (!technician.specialties.includes(specialty)) return false;
-        
-        // Filtrer par localisation (région et ville)
-        if (technician.location.region !== location.region) return false;
-        if (location.city && technician.location.city !== location.city) return false;
-        
-        return true;
-      });
-  }
-
-  async updateTechnicianAvailability(
-    id: string,
-    isAvailable: boolean
-  ): Promise<void> {
-    const today = new Date();
-    const dateString = today.toISOString().split('T')[0];
-    const formattedDate = new Date(dateString);
-
-    if (isAvailable) {
-      // Si le technicien est disponible, nous créons ou mettons à jour son entrée dans la table TechnicianAvailability
-      await this.prisma.technicianAvailability.upsert({
-        where: {
-          technicianId_availableDate: {
-            technicianId: id,
-            availableDate: formattedDate,
-          },
-        },
-        update: {
-          // Conserver les heures existantes si présentes
-          // Aucune modification n'est nécessaire car l'entrée existe déjà
-        },
-        create: {
-          technicianId: id,
-          availableDate: formattedDate,
-          availableHours: [
-            AppointmentTimeSlot.MORNING_8_10,
-            AppointmentTimeSlot.MORNING_10_12,
-            AppointmentTimeSlot.AFTERNOON_14_16,
-            AppointmentTimeSlot.AFTERNOON_16_18,
-          ],
-        },
-      });
-    } else {
-      // Si le technicien n'est pas disponible, nous supprimons son entrée dans la table TechnicianAvailability
-      await this.prisma.technicianAvailability.deleteMany({
-        where: {
-          technicianId: id,
-          availableDate: formattedDate,
-        },
-      });
-    }
   }
 
   // Appointments
@@ -491,29 +397,6 @@ export class PrismaRepairRepository implements RepairRepositoryPort {
     });
   }
 
-  async checkTimeSlotAvailability(
-    technicianId: string,
-    date: Date,
-    timeSlot: AppointmentTimeSlot
-  ): Promise<boolean> {
-    // Check if the technician is available at the given date and time slot
-    const availability = await this.prisma.technicianAvailability.findUnique({
-      where: {
-        technicianId_availableDate: {
-          technicianId,
-          availableDate: new Date(date.toISOString().split("T")[0]),
-        },
-      },
-    });
-
-    if (!availability) {
-      // If no record exists, the technician is available
-      return true;
-    }
-
-    // Check if the time slot is already booked
-    return !availability.availableHours.includes(timeSlot);
-  }
 
   // Estimates
   async createEstimate(
@@ -634,83 +517,6 @@ export class PrismaRepairRepository implements RepairRepositoryPort {
     };
   }
 
-  private mapUserToTechnician(user: any): Technician {
-    // Extract availability information
-    const isAvailable = user.technicianAvailability &&
-                        user.technicianAvailability.length > 0;
-    
-    // Récupérer les données du technicien à partir de l'objet user
-    // Dans une implémentation réelle, nous aurions des champs spécifiques pour les techniciens
-    // Pour l'instant, nous allons extraire ce que nous pouvons des données utilisateur existantes
-    
-    // Déterminer les spécialités en fonction des données disponibles
-    // Nous pouvons stocker cette information dans technicianNotes ou un autre champ
-    let specialties = [] as TechnicianSpecialty[];
-    
-    // Si l'utilisateur a des notes techniques, essayer de les extraire
-    if (user.technicianNotes) {
-      const notes = user.technicianNotes as any;
-      if (notes.specialties && Array.isArray(notes.specialties)) {
-        specialties = notes.specialties.filter((s: string) =>
-          Object.values(TechnicianSpecialty).includes(s as TechnicianSpecialty)
-        );
-      }
-    }
-    
-    // Fallback: Si aucune spécialité n'est trouvée, assigner une spécialité par défaut
-    // Cela devrait être remplacé par des données réelles dans le système final
-    if (specialties.length === 0) {
-      specialties = [TechnicianSpecialty.SMARTPHONE];
-    }
-    
-    // Déterminer la notation (rating) à partir des données disponibles
-    let rating = 0;
-    if (user.technicianNotes && (user.technicianNotes as any).rating) {
-      rating = (user.technicianNotes as any).rating;
-    } else {
-      // Fallback: notation par défaut
-      rating = 5;
-    }
-    
-    // Déterminer l'emplacement à partir des adresses de l'utilisateur
-    // Dans une vraie implémentation, on récupérerait cette information des tables address, region, city, commune
-    const location = {
-      region: "Central",
-      city: "Yaoundé",
-      commune: "Nlongkak",
-    };
-    
-    // Vérifier si l'utilisateur a des adresses associées
-    if (user.addresses && user.addresses.length > 0) {
-      const defaultAddress = user.addresses.find((addr: any) => addr.isDefault) || user.addresses[0];
-      
-      // Si l'adresse a des références aux tables region, city, commune, les utiliser
-      if (defaultAddress.region) {
-        location.region = defaultAddress.region.name;
-      }
-      
-      if (defaultAddress.city) {
-        location.city = defaultAddress.city.name;
-      }
-      
-      if (defaultAddress.commune) {
-        location.commune = defaultAddress.commune.name;
-      }
-    }
-    
-    return {
-      id: user.id,
-      name: user.fullName,
-      email: user.email,
-      phone: user.phone237,
-      specialties,
-      rating,
-      isAvailable,
-      location,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-  }
 
   private mapDomainStatusToPrisma(status: RepairStatus): RepairStatusEnum {
     switch (status) {

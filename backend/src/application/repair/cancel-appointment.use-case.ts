@@ -1,10 +1,12 @@
 import { Injectable, Inject } from "@nestjs/common";
 import {
   REPAIR_REPOSITORY,
-  REPAIR_DOMAIN_SERVICE,
   RepairRepositoryPort,
-  RepairDomainServicePort,
 } from "../../domain/repair/repair.port";
+import {
+  TECHNICIAN_REPOSITORY,
+  TechnicianRepositoryPort,
+} from "../../domain/repair/technician.repository.port";
 import { RepairStatus } from "../../domain/repair/repair.entity";
 
 export interface CancelAppointmentCommand {
@@ -18,8 +20,8 @@ export class CancelAppointmentUseCase {
   constructor(
     @Inject(REPAIR_REPOSITORY)
     private readonly repairRepository: RepairRepositoryPort,
-    @Inject(REPAIR_DOMAIN_SERVICE)
-    private readonly repairService: RepairDomainServicePort,
+    @Inject(TECHNICIAN_REPOSITORY)
+    private readonly technicianRepository: TechnicianRepositoryPort,
   ) {}
 
   async execute(command: CancelAppointmentCommand): Promise<void> {
@@ -70,15 +72,9 @@ export class CancelAppointmentUseCase {
     );
 
     // Libération du créneau du technicien
-    await this.repairRepository.updateTechnicianAvailability(
+    await this.technicianRepository.updateAvailability(
       appointment.technicianId,
       true,
-    );
-
-    // Envoi de la notification d'annulation
-    await this.repairService.sendAppointmentNotification(
-      command.appointmentId,
-      "cancellation",
     );
   }
 }
