@@ -1,15 +1,13 @@
 import { Injectable, Inject } from "@nestjs/common";
 import {
   REPAIR_REPOSITORY,
-  REPAIR_DOMAIN_SERVICE,
   RepairRepositoryPort,
-  RepairDomainServicePort,
 } from "../../domain/repair/repair.port";
 import {
-  RepairAppointment,
-  AppointmentTimeSlot,
-  RepairStatus,
-} from "../../domain/repair/repair.entity";
+  TECHNICIAN_REPOSITORY,
+  TechnicianRepositoryPort,
+} from "../../domain/repair/technician.repository.port";
+import { RepairAppointment, AppointmentTimeSlot, RepairStatus } from "../../domain/repair/repair.entity";
 
 export interface ScheduleRepairAppointmentCommand {
   repairRequestId: string;
@@ -32,8 +30,8 @@ export class ScheduleRepairAppointmentUseCase {
   constructor(
     @Inject(REPAIR_REPOSITORY)
     private readonly repairRepository: RepairRepositoryPort,
-    @Inject(REPAIR_DOMAIN_SERVICE)
-    private readonly repairService: RepairDomainServicePort,
+    @Inject(TECHNICIAN_REPOSITORY)
+    private readonly technicianRepository: TechnicianRepositoryPort,
   ) {}
 
   async execute(
@@ -52,7 +50,7 @@ export class ScheduleRepairAppointmentUseCase {
     }
 
     // Vérification que le technicien existe et est disponible
-    const technician = await this.repairRepository.getTechnicianById(
+    const technician = await this.technicianRepository.getById(
       command.technicianId,
     );
     if (!technician) {
@@ -65,7 +63,7 @@ export class ScheduleRepairAppointmentUseCase {
 
     // Vérification de la disponibilité du créneau
     const isTimeSlotAvailable =
-      await this.repairRepository.checkTimeSlotAvailability(
+      await this.technicianRepository.checkTimeSlotAvailability(
         command.technicianId,
         command.scheduledDate,
         command.timeSlot,
@@ -101,12 +99,6 @@ export class ScheduleRepairAppointmentUseCase {
       technicianId: command.technicianId,
       appointmentId: appointment.id,
     });
-
-    // Envoi de la notification de confirmation
-    await this.repairService.sendAppointmentNotification(
-      appointment.id,
-      "confirmation",
-    );
 
     return appointment;
   }

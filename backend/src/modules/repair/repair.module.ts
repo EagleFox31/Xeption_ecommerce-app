@@ -13,11 +13,14 @@ import { CancelAppointmentUseCase } from "../../application/repair/cancel-appoin
 
 // Infrastructure
 import { PrismaRepairRepository } from "../../infrastructure/prisma/repositories/repair.repository";
-import { PrismaRepairDomainService } from "../../infrastructure/prisma/services/repair-domain.service";
+import { PrismaTechnicianRepository } from "../../infrastructure/prisma/repositories/technician.repository";
+import { REPAIR_REPOSITORY } from "../../domain/repair/repair.port";
 import {
-  REPAIR_REPOSITORY,
-  REPAIR_DOMAIN_SERVICE,
-} from "../../domain/repair/repair.port";
+  TECHNICIAN_REPOSITORY,
+} from "../../domain/repair/technician.repository.port";
+import { RepairPricingService } from "../../domain/repair/repair-pricing.service";
+import { TechnicianMatcherService } from "../../domain/repair/technician-matcher.service";
+import { ScheduleRepairUseCase } from "../../application/repair/schedule-repair.use-case";
 
 @Module({
   controllers: [RepairController],
@@ -32,15 +35,18 @@ import {
     GetAvailableTechniciansUseCase,
     GetUserAppointmentsUseCase,
     CancelAppointmentUseCase,
+    ScheduleRepairUseCase,
+    RepairPricingService,
+    TechnicianMatcherService,
 
     // Infrastructure
     {
       provide: REPAIR_REPOSITORY,
-      useClass: PrismaRepairRepository, // Using Prisma implementation
+      useClass: PrismaRepairRepository,
     },
     {
-      provide: REPAIR_DOMAIN_SERVICE,
-      useClass: PrismaRepairDomainService,
+      provide: TECHNICIAN_REPOSITORY,
+      useClass: PrismaTechnicianRepository,
     },
   ],
   exports: [RepairService],

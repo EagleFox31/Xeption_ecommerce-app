@@ -6,12 +6,11 @@ import { GetUserRepairRequestsUseCase } from "../../application/repair/get-user-
 import { GetAvailableTechniciansUseCase } from "../../application/repair/get-available-technicians.use-case";
 import { GetUserAppointmentsUseCase } from "../../application/repair/get-user-appointments.use-case";
 import { CancelAppointmentUseCase } from "../../application/repair/cancel-appointment.use-case";
+import { REPAIR_REPOSITORY, RepairRepositoryPort } from "../../domain/repair/repair.port";
 import {
-  REPAIR_REPOSITORY,
-  REPAIR_DOMAIN_SERVICE,
-  RepairRepositoryPort,
-  RepairDomainServicePort,
-} from "../../domain/repair/repair.port";
+  TECHNICIAN_REPOSITORY,
+  TechnicianRepositoryPort,
+} from "../../domain/repair/technician.repository.port";
 import {
   RepairRequest,
   Technician,
@@ -19,6 +18,7 @@ import {
   RepairEstimate,
   AppointmentTimeSlot,
 } from "../../domain/repair/repair.entity";
+import { RepairPricingService } from "../../domain/repair/repair-pricing.service";
 import {
   CreateRepairRequestDto,
   ScheduleAppointmentDto,
@@ -39,8 +39,9 @@ export class RepairService {
     private readonly cancelAppointmentUseCase: CancelAppointmentUseCase,
     @Inject(REPAIR_REPOSITORY)
     private readonly repairRepository: RepairRepositoryPort,
-    @Inject(REPAIR_DOMAIN_SERVICE)
-    private readonly repairDomainService: RepairDomainServicePort,
+    @Inject(TECHNICIAN_REPOSITORY)
+    private readonly technicianRepository: TechnicianRepositoryPort,
+    private readonly pricingService: RepairPricingService,
   ) {}
 
   // Repair Requests
@@ -98,7 +99,7 @@ export class RepairService {
   }
 
   async getTechnician(id: string): Promise<Technician> {
-    const technician = await this.repairRepository.getTechnicianById(id);
+    const technician = await this.technicianRepository.getById(id);
     if (!technician) {
       throw new Error("Technician not found");
     }
@@ -194,7 +195,7 @@ export class RepairService {
     technicianId: string,
     date: Date,
   ): Promise<AppointmentTimeSlot[]> {
-    return await this.repairDomainService.getAvailableTimeSlots(
+    return await this.technicianRepository.getAvailableTimeSlots(
       technicianId,
       date,
     );
@@ -204,9 +205,6 @@ export class RepairService {
     deviceType: string,
     issueType: string,
   ): Promise<{ min: number; max: number }> {
-    return await this.repairDomainService.calculateRepairCost(
-      deviceType,
-      issueType,
-    );
+    return await this.pricingService.calculateRepairCost(deviceType, issueType);
   }
 }
