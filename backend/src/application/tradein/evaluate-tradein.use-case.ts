@@ -5,12 +5,14 @@ import {
   DeviceCondition,
   TradeInStatus,
 } from "../../domain/tradein/tradein.entity";
+import { TradeInValuationService } from "../../domain/tradein/tradein-valuation.service";
 
 @Injectable()
 export class EvaluateTradeInUseCase {
   constructor(
     @Inject(TRADEIN_REPOSITORY)
-    private readonly tradeInRepository: TradeInRepositoryPort
+    private readonly tradeInRepository: TradeInRepositoryPort,
+    private readonly valuationService: TradeInValuationService,
   ) {}
 
   async execute(
@@ -48,25 +50,16 @@ export class EvaluateTradeInUseCase {
       throw new Error("Scores must be between 0 and 100");
     }
 
-    // Récupérer les informations de l'appareil
-    const device = await this.tradeInRepository.getDeviceById(
-      tradeInRequest.deviceId,
-    );
-    if (!device) {
-      throw new Error("Device not found");
-    }
-
     // Calculer la valeur finale
-    const marketValue = device.baseValue;
-    const conditionMultiplier = this.getConditionMultiplier(condition);
+    const marketValue = await this.valuationService.estimate(
+      tradeInRequest.deviceId,
+      condition,
+    );
     const functionalityMultiplier = functionalityScore / 100;
     const cosmeticMultiplier = cosmeticScore / 100;
 
     const finalValue = Math.round(
-      marketValue *
-        conditionMultiplier *
-        functionalityMultiplier *
-        cosmeticMultiplier,
+      marketValue * functionalityMultiplier * cosmeticMultiplier,
     );
 
     // Créer l'évaluation
@@ -86,24 +79,10 @@ export class EvaluateTradeInUseCase {
       requestId,
       {
         status: TradeInStatus.APPROVED,
-        finalValue,
-        evaluatorNotes: notes,
-        evaluatedAt: new Date(),
       },
     );
 
     return updatedRequest;
   }
 
-  private getConditionMultiplier(condition: DeviceCondition): number {
-    const multipliers = {
-      [DeviceCondition.EXCELLENT]: 0.85,
-      [DeviceCondition.GOOD]: 0.7,
-      [DeviceCondition.FAIR]: 0.5,
-      [DeviceCondition.POOR]: 0.3,
-      [DeviceCondition.BROKEN]: 0.15,
-    };
-
-    return multipliers[condition] || 0.15;
-  }
 }

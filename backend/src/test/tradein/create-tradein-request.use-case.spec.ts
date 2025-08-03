@@ -1,6 +1,7 @@
 import { Test, TestingModule } from "@nestjs/testing";
 import { CreateTradeInRequestUseCase } from "../../application/tradein/create-tradein-request.use-case";
 import { TradeInRepositoryPort, TRADEIN_REPOSITORY } from "../../domain/tradein/tradein.port";
+import { TradeInValuationService } from "../../domain/tradein/tradein-valuation.service";
 import {
   DeviceCondition,
   TradeInStatus,
@@ -9,6 +10,7 @@ import {
 describe("CreateTradeInRequestUseCase", () => {
   let useCase: CreateTradeInRequestUseCase;
   let repository: TradeInRepositoryPort;
+  let valuationService: TradeInValuationService;
 
   const mockDevice = {
     id: "device-123",
@@ -46,6 +48,19 @@ describe("CreateTradeInRequestUseCase", () => {
     getEvaluationByRequestId: jest.fn(),
   };
 
+  const mockValuationService = {
+    estimate: jest.fn(async (_deviceId: string, condition: DeviceCondition) => {
+      const multipliers = {
+        [DeviceCondition.EXCELLENT]: 0.85,
+        [DeviceCondition.GOOD]: 0.7,
+        [DeviceCondition.FAIR]: 0.5,
+        [DeviceCondition.POOR]: 0.3,
+        [DeviceCondition.BROKEN]: 0.15,
+      };
+      return Math.round(mockDevice.baseValue * multipliers[condition]);
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -54,6 +69,10 @@ describe("CreateTradeInRequestUseCase", () => {
           provide: TRADEIN_REPOSITORY,
           useValue: mockRepository,
         },
+        {
+          provide: TradeInValuationService,
+          useValue: mockValuationService,
+        },
       ],
     }).compile();
 
@@ -61,6 +80,7 @@ describe("CreateTradeInRequestUseCase", () => {
       CreateTradeInRequestUseCase,
     );
     repository = module.get<TradeInRepositoryPort>(TRADEIN_REPOSITORY);
+    valuationService = module.get<TradeInValuationService>(TradeInValuationService);
   });
 
   afterEach(() => {

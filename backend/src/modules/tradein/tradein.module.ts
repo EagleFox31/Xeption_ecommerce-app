@@ -7,8 +7,8 @@ import { GetUserTradeInRequestsUseCase } from "../../application/tradein/get-use
 import { SearchDevicesUseCase } from "../../application/tradein/search-devices.use-case";
 import { EvaluateTradeInUseCase } from "../../application/tradein/evaluate-tradein.use-case";
 import { PrismaTradeInRepository } from '../../infrastructure/prisma/repositories/tradein.repository';
-import { PrismaTradeInService } from '../../infrastructure/prisma/services/tradein.service';
-import { TRADEIN_REPOSITORY, TRADEIN_SERVICE } from '../../domain/tradein/tradein.port';
+import { TRADEIN_REPOSITORY } from '../../domain/tradein/tradein.port';
+import { TradeInValuationService } from '../../domain/tradein/tradein-valuation.service';
 
 @Module({
   controllers: [TradeInController],
@@ -21,19 +21,14 @@ import { TRADEIN_REPOSITORY, TRADEIN_SERVICE } from '../../domain/tradein/tradei
     GetUserTradeInRequestsUseCase,
     SearchDevicesUseCase,
     EvaluateTradeInUseCase,
+    TradeInValuationService,
 
     // Repository binding
     {
       provide: TRADEIN_REPOSITORY,
       useClass: PrismaTradeInRepository,
     },
-
-    // Service binding
-    {
-      provide: TRADEIN_SERVICE,
-      useClass: PrismaTradeInService,
-    },
   ],
-  exports: [TradeInService, TRADEIN_SERVICE],
+  exports: [TradeInService],
 })
 export class TradeInModule {}

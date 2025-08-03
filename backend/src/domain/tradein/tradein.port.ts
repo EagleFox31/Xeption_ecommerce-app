@@ -7,7 +7,6 @@ import {
 } from "./tradein.entity";
 
 export const TRADEIN_REPOSITORY = Symbol('TradeInRepositoryPort');
-export const TRADEIN_SERVICE = Symbol('TradeInServicePort');
 
 export interface TradeInRepositoryPort {
   // Trade-in requests
@@ -34,40 +33,4 @@ export interface TradeInRepositoryPort {
   getEvaluationByRequestId(
     requestId: string,
   ): Promise<TradeInEvaluation | null>;
-}
-
-export interface TradeInServicePort {
-  createTradeInRequest(
-    userId: string,
-    deviceId: string,
-    condition: DeviceCondition,
-    description?: string,
-    images?: string[],
-  ): Promise<TradeInRequest>;
-
-  getTradeInRequest(id: string, userId?: string): Promise<TradeInRequest>;
-  getUserTradeInRequests(userId: string): Promise<TradeInRequest[]>;
-
-  updateTradeInStatus(
-    id: string,
-    status: TradeInStatus,
-    evaluatorNotes?: string,
-  ): Promise<TradeInRequest>;
-
-  evaluateTradeIn(
-    requestId: string,
-    evaluatorId: string,
-    condition: DeviceCondition,
-    functionalityScore: number,
-    cosmeticScore: number,
-    notes: string,
-  ): Promise<TradeInRequest>;
-
-  searchDevices(query: string, category?: string): Promise<Device[]>;
-  getDevicesByCategory(category: string): Promise<Device[]>;
-
-  calculateEstimatedValue(
-    deviceId: string,
-    condition: DeviceCondition,
-  ): Promise<number>;
 }
