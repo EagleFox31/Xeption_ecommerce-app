@@ -8,8 +8,9 @@ import {
   BackorderRepository,
   ProductStockService,
   BACKORDER_REPOSITORY,
-  PRODUCT_STOCK_SERVICE
+  PRODUCT_STOCK_SERVICE,
 } from "../../domain/backorder/backorder.port";
+import { BackorderDomainService } from "../../domain/backorder/backorder-domain.service";
 import {
   BackorderRequest,
   BackorderStatus,
@@ -37,6 +38,7 @@ export class CreateBackorderRequestUseCase {
     private readonly backorderRepository: BackorderRepository,
     @Inject(PRODUCT_STOCK_SERVICE)
     private readonly productStockService: ProductStockService,
+    private readonly backorderDomainService: BackorderDomainService,
   ) {}
 
   async execute(input: CreateBackorderRequestInput): Promise<BackorderRequest> {
@@ -69,7 +71,9 @@ export class CreateBackorderRequestUseCase {
 
     // Obtenir la date de réapprovisionnement estimée
     const expectedRestockDate =
-      await this.productStockService.getExpectedRestockDate(input.productId);
+      await this.backorderDomainService.getExpectedRestockDate(
+        input.productId,
+      );
 
     // Créer la demande de précommande
     const backorderRequest =

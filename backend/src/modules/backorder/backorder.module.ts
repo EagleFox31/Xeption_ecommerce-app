@@ -17,23 +17,14 @@ import { CancelBackorderRequestUseCase } from "../../application/backorder/cance
 // Repositories and Services
 import {
   BACKORDER_REPOSITORY,
-  ProductStockService,
-  BackorderNotificationService,
+  PRODUCT_STOCK_SERVICE,
+  BACKORDER_NOTIFICATION_SERVICE,
 } from "../../domain/backorder/backorder.port";
+import { BackorderDomainService } from "../../domain/backorder/backorder-domain.service";
 import { PrismaBackorderRepository } from "../../infrastructure/prisma/repositories/backorder.repository";
 import { PrismaProductStockService } from "../../infrastructure/prisma/services/product-stock.service";
 import { PrismaBackorderNotificationService } from "../../infrastructure/prisma/services/backorder-notification.service";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
-
-/**
- * Injection token for ProductStockService
- */
-export const PRODUCT_STOCK_SERVICE = 'PRODUCT_STOCK_SERVICE';
-
-/**
- * Injection token for BackorderNotificationService
- */
-export const BACKORDER_NOTIFICATION_SERVICE = 'BACKORDER_NOTIFICATION_SERVICE';
 
 @Module({
   imports: [PrismaModule],
@@ -47,6 +38,8 @@ export const BACKORDER_NOTIFICATION_SERVICE = 'BACKORDER_NOTIFICATION_SERVICE';
     GetUserBackorderRequestsUseCase,
     UpdateBackorderRequestUseCase,
     CancelBackorderRequestUseCase,
+
+    BackorderDomainService,
 
     // Repository
     {

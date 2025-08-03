@@ -89,13 +89,7 @@ export class PrismaBackorderNotificationService implements BackorderNotification
     // In a real implementation, this would send price change alerts
     // The notification should include both the old and new price
     // This allows users to make informed decisions about their backorders
-    
+
     console.log(`Sending price change notification for request ${backorderRequest.id}`);
-    
-    // If the price exceeds user's maxPrice, we might want to add special handling
-    if (backorderRequest.maxPrice && newPrice > backorderRequest.maxPrice) {
-      console.log(`Price ${newPrice} exceeds user's max budget of ${backorderRequest.maxPrice}`);
-      // Additional logic for when price exceeds budget could be implemented here
-    }
   }
 }

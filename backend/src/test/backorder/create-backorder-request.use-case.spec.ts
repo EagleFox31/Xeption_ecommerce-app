@@ -6,19 +6,24 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { CreateBackorderRequestUseCase } from "../../application/backorder/create-backorder-request.use-case";
 import {
   BackorderRepository,
-  ProductStockService,
   BACKORDER_REPOSITORY,
-  PRODUCT_STOCK_SERVICE
+  PRODUCT_STOCK_SERVICE,
 } from "../../domain/backorder/backorder.port";
 import {
   BackorderStatus,
   BackorderPriority,
 } from "../../domain/backorder/backorder.entity";
+import { BackorderDomainService } from "../../domain/backorder/backorder-domain.service";
 
 describe("CreateBackorderRequestUseCase", () => {
   let useCase: CreateBackorderRequestUseCase;
   let mockBackorderRepository: jest.Mocked<BackorderRepository>;
-  let mockProductStockService: jest.Mocked<ProductStockService>;
+  let mockProductStockService: {
+    checkStockLevel: jest.Mock;
+    getEarliestOrderedBackorderDate: jest.Mock;
+    subscribeToStockUpdates: jest.Mock;
+  };
+  let mockBackorderDomainService: jest.Mocked<BackorderDomainService>;
 
   const mockBackorderRequest = {
     id: "123e4567-e89b-12d3-a456-426614174000",
@@ -56,9 +61,15 @@ describe("CreateBackorderRequestUseCase", () => {
 
     const mockStockService = {
       checkStockLevel: jest.fn(),
-      getExpectedRestockDate: jest.fn(),
+      getEarliestOrderedBackorderDate: jest.fn(),
       subscribeToStockUpdates: jest.fn(),
     };
+
+    const mockDomainService = {
+      getExpectedRestockDate: jest.fn(),
+      priceExceedsMax: jest.fn(),
+      handlePriceChange: jest.fn(),
+    } as unknown as jest.Mocked<BackorderDomainService>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -71,6 +82,10 @@ describe("CreateBackorderRequestUseCase", () => {
           provide: PRODUCT_STOCK_SERVICE,
           useValue: mockStockService,
         },
+        {
+          provide: BackorderDomainService,
+          useValue: mockDomainService,
+        },
       ],
     }).compile();
 
@@ -79,6 +94,7 @@ describe("CreateBackorderRequestUseCase", () => {
     );
     mockBackorderRepository = module.get(BACKORDER_REPOSITORY);
     mockProductStockService = module.get(PRODUCT_STOCK_SERVICE);
+    mockBackorderDomainService = module.get(BackorderDomainService);
   });
 
   describe("execute", () => {
@@ -99,7 +115,7 @@ describe("CreateBackorderRequestUseCase", () => {
     it("devrait créer une demande de précommande avec succès", async () => {
       // Arrange
       mockProductStockService.checkStockLevel.mockResolvedValue(0);
-      mockProductStockService.getExpectedRestockDate.mockResolvedValue(
+      mockBackorderDomainService.getExpectedRestockDate.mockResolvedValue(
         new Date("2024-02-01"),
       );
       mockProductStockService.subscribeToStockUpdates.mockResolvedValue(

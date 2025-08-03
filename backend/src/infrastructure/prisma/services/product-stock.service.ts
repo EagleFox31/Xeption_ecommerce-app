@@ -25,14 +25,13 @@ export class PrismaProductStockService implements ProductStockService {
   }
 
   /**
-   * Get the expected restock date for a product
+   * Get the creation date of the earliest ordered backorder for a product
    * @param productId Product ID to check
-   * @returns Expected restock date or null if unknown
+   * @returns Creation date or null if none found
    */
-  async getExpectedRestockDate(productId: string): Promise<Date | null> {
-    // First check if there's a planned restock date in settings or another table
-    // This would require a dedicated table for inventory planning
-    // For now, we can check for any pending back orders that might have been ordered
+  async getEarliestOrderedBackorderDate(
+    productId: string,
+  ): Promise<Date | null> {
     const backOrder = await this.prisma.backOrder.findFirst({
       where: {
         productRef: productId,
@@ -41,17 +40,10 @@ export class PrismaProductStockService implements ProductStockService {
       orderBy: {
         createdAt: 'asc',
       },
+      select: { createdAt: true },
     });
 
-    if (backOrder) {
-      // If there's an ordered backorder, estimate 2 weeks from order date
-      // This could be enhanced with actual supplier delivery estimates
-      const estimatedDate = new Date(backOrder.createdAt);
-      estimatedDate.setDate(estimatedDate.getDate() + 14);
-      return estimatedDate;
-    }
-
-    return null;
+    return backOrder ? backOrder.createdAt : null;
   }
 
   /**
